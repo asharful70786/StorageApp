@@ -97,8 +97,13 @@ const Login = () => {
           <LogWithGoogle />
         </button>
       
+        {/* <button className="social-button">
+          <LogWithGithub />
+        </button> */}
+      </div>
+      <div className="social-login">      
         <button className="social-button">
-          {/* <LogWithGithub /> */}
+          <LogWithGithub />
         </button>
       </div>
     </div>

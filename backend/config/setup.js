@@ -46,11 +46,14 @@ try {
           rootDirId: {
             bsonType: "objectId",
           },
+          isDeleted: {
+            bsonType: "bool"
+          },          
           "__v": {
             "bsonType": "int"
           }
         },
-        additionalProperties: true,
+        additionalProperties: false,
       },
     },
     validationAction: "error",
@@ -79,6 +82,9 @@ try {
           parentDirId: {
             bsonType: ["objectId", "null"],
           },
+          "__v": {
+            "bsonType": "int"
+          }
         },
         additionalProperties: false,
       },
@@ -109,6 +115,9 @@ try {
           parentDirId: {
             bsonType: "objectId",
           },
+          "__v": {
+            "bsonType": "int"
+          }
         },
         additionalProperties: false,
       },

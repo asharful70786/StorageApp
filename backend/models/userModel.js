@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
     },
-   
+
     picture: {
       type: String,
       default: "https://png.pngtree.com/png-clipart/20231019/original/pngtree-user-profile-avatar-png-image_13369989.png"
@@ -26,12 +26,16 @@ const userSchema = new mongoose.Schema(
       ref: "Directory",
       required: true,
     },
-     role: {
+    role: {
       type: String,
       enum: ["admin", "user", "manager"],
       default: "user"
 
     },
+    isDeleted: {
+      type: Boolean,
+      default: false
+    }
   },
 );
 

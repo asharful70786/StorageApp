@@ -5,6 +5,11 @@ import mongoose, { Mongoose, Schema } from "mongoose";
 
 export const getDirectory = async (req, res) => {
   const user = req.user;
+  //soft deleted apply
+  if (user.isDeleted) {
+    res.clearCookie("sid");
+    return res.status(403).json({ message: "Your account has been blocked. Please contact the admin." });
+  }
   const _id = req.params.id || user.rootDirId.toString();
   const directoryData = await Directory.findOne({ _id }).lean();
   if (!directoryData) {
@@ -24,11 +29,15 @@ export const getDirectory = async (req, res) => {
 
 export const createDirectory = async (req, res, next) => {
   const user = req.user;
-
+  //soft deleted apply
+   if (user.isDeleted) {
+    res.clearCookie("sid");
+    return res.status(403).json({ message: "Your account has been blocked. Please contact the admin." });
+  }
   const parentDirId = req.params.parentDirId || user.rootDirId.toString();
   const dirname = req.body.dirname || "New Folder";
 
-  
+
   try {
     const parentDir = await Directory.findById(parentDirId).lean();
     if (!parentDir) {
@@ -53,6 +62,11 @@ export const createDirectory = async (req, res, next) => {
 
 export const renameDirectory = async (req, res, next) => {
   const user = req.user;
+  //soft deleted apply
+  if (user.isDeleted) {
+    res.clearCookie("sid");
+    return res.status(403).json({ message: "Your account has been blocked. Please contact the admin." });
+  }
   const { id } = req.params;
   const { newDirName } = req.body;
   try {
@@ -71,7 +85,12 @@ export const renameDirectory = async (req, res, next) => {
 
 export const deleteDirectory = async (req, res, next) => {
   const { id } = req.params;
-
+  const user = req.user;
+  //soft deleted apply
+  if (user.isDeleted) {
+    res.clearCookie("sid");
+    return res.status(403).json({ message: "Your account has been blocked. Please contact the admin." });
+  }
   try {
     const directoryData = await Directory.findOne({
       _id: id,

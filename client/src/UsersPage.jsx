@@ -142,6 +142,7 @@ async function roleBaseDeleteUser(_id) {
                     onClick={() => {
                       roleBaseDeleteUser(user.id);
                     }}
+                    disabled={userEmail === user.email}
                   >
                     Delete
                   </button>

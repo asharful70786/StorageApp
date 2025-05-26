@@ -21,8 +21,8 @@ router.post("/user/login", login);
 router.get("/user/", checkAuth, getCurrentUser);
 
 
-router.post("/logout", logout);
-router.post("/logout-all", checkAuth, logoutAll);
+router.post("/user/logout", logout);
+router.post("/user/logout-all", checkAuth, logoutAll);
 
 router.get("/users", checkAuth,roleBaseAccessMiddleware, getAllUsers);
 

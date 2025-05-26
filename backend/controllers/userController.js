@@ -9,8 +9,20 @@ import File from "../models/fileModel.js";
 
 export const register = async (req, res, next) => {
   const { name, email, password } = req.body;
-  let hased_Password = await bcrypt.hash(password, 10);
+  let hashed_Password = await bcrypt.hash(password, 10);
   const foundUser = await User.findOne({ email });
+  if (foundUser) {
+    return res
+      .status(409)
+      .json({ error: "A user with this email address already exists" });
+  }
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+  if (foundUser.isDeleted) {
+    res.clearCookie("sid");
+    return res.status(403).json({ error: "Your account has been deleted or blocked. Please contact the admin." });
+  }
   const session = await mongoose.startSession();
 
   try {
@@ -32,7 +44,7 @@ export const register = async (req, res, next) => {
         _id: userId,
         name,
         email,
-        password: hased_Password,
+        password: hashed_Password,
         rootDirId,
       },
       { session }
@@ -63,6 +75,10 @@ export const login = async (req, res, next) => {
   const user = await User.findOne({ email });
   if (!user) {
     return res.status(404).json({ error: "Invalid Credentials , User not found" });
+  }
+  if (user.isDeleted) {
+    res.clearCookie("sid");
+    return res.status(403).json({ error: "Your account has been deleted or blocked. Please contact the admin." });
   }
 
   try {
@@ -143,17 +159,15 @@ export const logoutAll = async (req, res) => {
 };
 
 export const getAllUsers = async (req, res) => {
-  if (req.user.role == "user") {
-    return res.status(403).json({ error: "You are not Authorizes to login the  page " });
-  }
   try {
-    const allUsers = await User.find().select("-password -__v").lean();
+    const allUsers = await User.find({ isDeleted: false }).select("-password -__v").lean();
     const allSession = await Session.find().lean();
     //when we fetch in .lean() it retrun as object /. otherwise in normal it return as array
     const allSessionUserIds = allSession.map(({ userId }) => userId.toString());
-    const transformedUsers = allUsers.map(({ _id, name, email }) => ({
+    const transformedUsers = allUsers.map(({ _id, name, email, isDeleted }) => ({
       name,
       email,
+      // isDeleted,
       id: _id,
       isLoggedIn: allSessionUserIds.includes(_id.toString()),
     }
@@ -186,31 +200,46 @@ export const roleBaseActionPerform = async (req, res, next) => {
 }
 
 export const deleteUserByAdmin = async (req, res) => {
-
   try {
     const { _id } = req.body;
-    const user = await User.findById(_id);
-    if(user === req.user){
-      return res.status(403).json({ error: "you can't delete yourself" });
+
+    const user_Tobe_Delete = await User.findById(_id);
+    if (!user_Tobe_Delete) {
+      return res.status(404).json({ error: "User not found" });
     }
-    if (user.role == "admin") {
-      return res.status(403).json({ error: "you are admin you cant delete yourself" });
+
+    // Prevent deleting self
+    if (user_Tobe_Delete._id.toString() === req.user._id.toString()) {
+      return res.status(403).json({ error: "You can't delete yourself" });
     }
-    //directly delete user
-    await Directory.deleteMany({ userId: _id });
-    await File.deleteMany({ userId: _id });
-    await Session.deleteMany({ userId: _id });
-    await User.findByIdAndDelete(_id);
 
-    console.log("user", user)
+    // Prevent deleting action according to role
+    if (user_Tobe_Delete.role === "admin") {
+      // Block the requester is not a higher role
+      if (req.user.role === "admin") {
+        return res.status(403).json({ error: "Admins can't delete other admins" });
+      }
+      if (req.user.role === "manager") {
+        return res.status(403).json({ error: "Managers can't delete admins" });
+      }
+    }
 
+    if (req.user.role === "manager" && user_Tobe_Delete.role === "manager") {
+      return res.status(403).json({ error: "Managers can't delete other managers" });
+    }
 
+    // its real delete
+    // await Directory.deleteMany({ userId: _id });
+    // await File.deleteMany({ userId: _id });
+    // await Session.deleteMany({ userId: _id });
+    // await User.findByIdAndDelete(_id);
 
+    //soft deleted apply
+    await user_Tobe_Delete.updateOne({ isDeleted: true });
 
+    return res.json({ message: "User deleted successfully by admin" });
 
-
-    return res.json("user deleted Successfully by admin");
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
-}
+};

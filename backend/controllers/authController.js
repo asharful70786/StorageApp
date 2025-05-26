@@ -7,7 +7,13 @@ import { loginWithGoogle } from "../services/loginWithGoogle.js";
 import Session from "../models/sessionModel.js";
 
 const sendOtpRequest = async (req, res) => {
+  
   const { email } = req.body;
+  const user = await User.findOne({ email });
+  //soft deleted apply
+  if (user.isDeleted) {
+    return res.status(400).json({ message: "Your account has been deleted or blocked. Please contact the admin." });
+  }
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
   }
@@ -57,8 +63,14 @@ export const continueWithGoogle = async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
+    //soft deleted apply
+    if (user.isDeleted) {
+      res.clearCookie("sid");
+      return res.status(403).json({ message: "Your account has been deleted or blocked. Please contact the admin." });
+    }
+
     if (user) {
-      //google login here 
+      //login here 
       const session = await Session.create({ userId: user._id });
       const userSession = await Session.find({ userId: user._id });
       if (userSession.length >= 3) {
@@ -114,21 +126,21 @@ export const continueWithGoogle = async (req, res) => {
     return res.status(201).json({ message: "User registered successfully" });
 
   } catch (error) {
-  console.error("Error in continueWithGoogle:", error);
+    console.error("Error in continueWithGoogle:", error);
 
-  // Handle MongoDB JSON Schema validation error
-  if (error.name === "MongoServerError" && error.code === 121) {
-    const validationErrors = error.errInfo?.details?.schemaRulesNotSatisfied || [];
+    // Handle MongoDB JSON Schema validation error
+    if (error.name === "MongoServerError" && error.code === 121) {
+      const validationErrors = error.errInfo?.details?.schemaRulesNotSatisfied || [];
 
-    // Log each detailed validation issue
-    console.error("Validation details:", JSON.stringify(validationErrors, null, 2));
+      // Log each detailed validation issue
+      console.error("Validation details:", JSON.stringify(validationErrors, null, 2));
 
-    return res.status(400).json({
-      error: "User validation failed",
-      validationIssues: validationErrors
-    });
+      return res.status(400).json({
+        error: "User validation failed",
+        validationIssues: validationErrors
+      });
+    }
   }
-}
 
 };
 export const continueWithGithub = async (req, res) => {
@@ -167,6 +179,9 @@ export const continueWithGithub = async (req, res) => {
     });
 
     const emails = await emailRes.json();
+    if (!emails) {
+      return res.status(400).json({ error: 'No emails found on GitHub account' });
+    }
     const primaryEmail = emails.find(email => email.primary && email.verified)?.email;
 
     if (!primaryEmail) {
@@ -182,9 +197,14 @@ export const continueWithGithub = async (req, res) => {
 
     // Step 4: Check if user already exists
     let user = await User.findOne({ email });
+    //soft deleted apply
+    if (user.isDeleted) {
+      res.clearCookie("sid");
+      return res.status(403).json({ message: "Your account has been deleted or blocked. Please contact the admin." });
+    }
 
     if (user) {
-      // User exists, create new session
+      // User exists, create new session(login)
       const session = await Session.create({ userId: user._id });
       const userSessions = await Session.find({ userId: user._id });
       if (userSessions.length >= 3) {
@@ -197,7 +217,8 @@ export const continueWithGithub = async (req, res) => {
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       });
 
-      return res.status(200).json({ message: "Logged In with GitHub" });
+      res.redirect("/");
+      //  res.status(200).json({ message: "Logged In with GitHub" });
     }
 
     // Step 5: Register new user

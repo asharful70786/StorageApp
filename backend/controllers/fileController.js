@@ -8,6 +8,11 @@ import User from "../models/userModel.js";
 
 
 export const uploadFile = async (req, res, next) => {
+  const user = req.user;
+  if (user.isDeleted) {
+    res.clearCookie("sid");
+    return res.status(403).json({ message: "Your account has been blocked. Please contact the admin." });
+  }
   const parentDirId = req.params.parentDirId || req.user.rootDirId;
   const parentDirData = await Directory.findOne({
     _id: parentDirId,
@@ -59,6 +64,12 @@ export const uploadFile = async (req, res, next) => {
 
 export const getFile = async (req, res) => {
   const { id } = req.params;
+  const user = req.user;
+  //soft deleted apply
+   if (user.isDeleted) {
+    res.clearCookie("sid");
+    return res.status(403).json({ message: "Your account has been blocked. Please contact the admin." });
+  }
   const fileData = await File.findOne({
     _id: id,
     userId: req.user._id,
@@ -85,6 +96,12 @@ export const getFile = async (req, res) => {
 
 export const renameFile = async (req, res, next) => {
   const { id } = req.params;
+  const user = req.user;
+  //soft deleted apply
+   if (user.isDeleted) {
+    res.clearCookie("sid");
+    return res.status(403).json({ message: "Your account has been blocked. Please contact the admin." });
+  }
   const fileData = await File.findOne({
     _id: id,
     userId: req.user._id,
@@ -106,6 +123,12 @@ export const renameFile = async (req, res, next) => {
 
 export const deleteFile = async (req, res, next) => {
   const { id } = req.params;
+  const user = req.user;
+  //soft deleted apply
+   if (user.isDeleted) {
+    res.clearCookie("sid");
+    return res.status(403).json({ message: "Your account has been blocked. Please contact the admin." });
+  }
   const fileData = await File.findOne({
     _id: id,
     userId: req.user._id,
