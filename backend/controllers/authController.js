@@ -7,7 +7,7 @@ import { loginWithGoogle } from "../services/loginWithGoogle.js";
 import Session from "../models/sessionModel.js";
 
 const sendOtpRequest = async (req, res) => {
-  
+
   const { email } = req.body;
   const user = await User.findOne({ email });
   //soft deleted apply
@@ -61,15 +61,15 @@ export const continueWithGoogle = async (req, res) => {
 
   const { name, email, picture } = userInfo;
 
+
   try {
     const user = await User.findOne({ email });
-    //soft deleted apply
-    if (user.isDeleted) {
-      res.clearCookie("sid");
-      return res.status(403).json({ message: "Your account has been deleted or blocked. Please contact the admin." });
-    }
 
     if (user) {
+      if (user.isDeleted) {
+        res.clearCookie("sid");
+        return res.status(403).json({ message: "Your account has been deleted or blocked. Please contact the admin." });
+      }
       //login here 
       const session = await Session.create({ userId: user._id });
       const userSession = await Session.find({ userId: user._id });

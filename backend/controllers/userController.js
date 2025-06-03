@@ -120,29 +120,6 @@ export const logout = async (req, res) => {
   res.status(204).end();
 };
 
-// export const continueWithGoogle = async (req, res) => {
-//   const { token } = req.body;
-//   if (!token) {
-//     return res.status(400).json({ error: "Token is required" });
-//   }
-
-//   let userInfo = await loginWithGoogle(token);
-//    const {name , email , picture } = userInfo;
-//    console.log(name , email , picture);
-//     const user = await User.findOne({email});
-//     if (!user) {
-//       return ;
-//     }else{
-//       const newUser =   await User.create({
-//         name,
-//         email,
-//         profile: picture
-//       });
-//       res.json({ newUser });
-//     }
-
-
-// }
 
 
 
