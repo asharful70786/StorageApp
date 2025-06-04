@@ -1,7 +1,6 @@
 import { createWriteStream, Dir } from "fs";
 import { rm } from "fs/promises";
 import path from "path";
-import { ObjectId } from "mongodb";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
 import User from "../models/userModel.js";

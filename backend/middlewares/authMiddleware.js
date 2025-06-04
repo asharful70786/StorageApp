@@ -1,5 +1,6 @@
 import User from "../models/userModel.js";
 import Session from "../models/sessionModel.js";
+import redisClient from "../config/redis.js";
 
 export default async function checkAuth(req, res, next) {
   try {
@@ -7,19 +8,15 @@ export default async function checkAuth(req, res, next) {
     if (!sid) {
       return res.status(401).json({ error: "Not logged in!" });
     }
-    const session = await Session.findById(sid);
+    const session = await redisClient.json.get(`session:${sid}`);
     if (!session) {
       res.clearCookie("sid");
       return res.status(401).json({ error: "Session expired or invalid!" });
     }
-    const user = await User.findById(session.userId).select("-password");
-    if (!user) {
-      res.clearCookie("sid");
-      await Session.findByIdAndDelete(sid);
-      return res.status(401).json({ error: "User not found!" });
-    }
-
-    req.user = user;
+    req.user = {
+      _id: session.userId,
+      rootDirId: session.rootDirId, //login time root dir id set in  redis session 
+    };
     next();
   } catch (error) {
     console.error("checkAuth error:", error);

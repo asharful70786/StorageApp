@@ -5,24 +5,22 @@ import mongoose, { Types } from "mongoose";
 import bcrypt from "bcrypt";
 import Session from "../models/sessionModel.js";
 import File from "../models/fileModel.js";
+import RedisClient from "../config/redis.js";
 
 
 export const register = async (req, res, next) => {
   const { name, email, password } = req.body;
-  let hashed_Password = await bcrypt.hash(password, 10);
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
   const foundUser = await User.findOne({ email });
   if (foundUser) {
     return res
       .status(409)
       .json({ error: "A user with this email address already exists" });
   }
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: "All fields are required" });
-  }
-  if (foundUser.isDeleted) {
-    res.clearCookie("sid");
-    return res.status(403).json({ error: "Your account has been deleted or blocked. Please contact the admin." });
-  }
+
+  let hashed_Password = await bcrypt.hash(password, 10);
   const session = await mongoose.startSession();
 
   try {
@@ -87,36 +85,39 @@ export const login = async (req, res, next) => {
     if (!enteredPassword) {
       return res.status(401).json({ error: "Invalid Credentials  , User not found" });
     }
+    const sessionId = crypto.randomUUID();
+    const redisKey = `session:${sessionId}`;
+    await RedisClient.json.set(redisKey, "$", { userId: user._id, rootDirId: user.rootDirId });
 
-    const session = await Session.create({ userId: user._id });
-    const userSession = await Session.find({ userId: user._id });
-    if (userSession.length >= 3) {
-      await Session.findByIdAndDelete(userSession[0]._id);
-    } //logout user if he login more than 3 times
+    const sessionExpiresAt = Date.now() + 1000 * 60 * 60 * 24 * 7;
+    await RedisClient.expire(redisKey, Math.floor(sessionExpiresAt / 1000));
 
-    res.cookie("sid", session._id, {
+    res.cookie("sid", sessionId, {
       httpOnly: true,
       signed: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7,
+      maxAge: sessionExpiresAt,
     });
     return res.status(200).json({ message: "Logged In" });
   } catch (error) {
-    return res.status(500).json({ error: "Internal Server Error at login time" });
+    console.log("Error in login:", error);
+    return res.status(500).json({ error: "Internal Server Error at login time 1" });
   }
 };
 
-export const getCurrentUser = (req, res) => {
+export const getCurrentUser = async (req, res) => {
+  const { sid } = req.signedCookies;
+  const user = await User.findById({ _id: req.user._id }).select("-password -__v -isDeleted -rootDirId -role").lean();
   res.status(200).json({
-    name: req.user.name,
-    email: req.user.email,
-    picture: req.user.picture,
-    role: req.user.role
+    name: user.name,
+    email: user.email,
+    picture: user.picture,
+    role: user.role
   });
 };
 
 export const logout = async (req, res) => {
   res.clearCookie("sid");
-  await Session.findByIdAndDelete(req.signedCookies.sid);
+  await RedisClient.del(`session:${req.signedCookies.sid}`);
   res.status(204).end();
 };
 
@@ -127,7 +128,6 @@ export const logoutAll = async (req, res) => {
   try {
     await Session.deleteMany({ userId: req.user._id });
     res.clearCookie("sid");
-    console.log("All sessions deleted");
     return res.status(204).end();
   } catch (error) {
     console.error("Error in logoutAll:", error);

@@ -5,14 +5,14 @@ import Directory from "../models/directoryModel.js";
 import mongoose, { Types } from "mongoose";
 import { loginWithGoogle } from "../services/loginWithGoogle.js";
 import Session from "../models/sessionModel.js";
+import RedisClient from "../config/redis.js";
 
 const sendOtpRequest = async (req, res) => {
 
   const { email } = req.body;
   const user = await User.findOne({ email });
-  //soft deleted apply
-  if (user.isDeleted) {
-    return res.status(400).json({ message: "Your account has been deleted or blocked. Please contact the admin." });
+  if (user) {
+    return res.status(404).json({ message: "User user already exist with this email" });
   }
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
@@ -70,20 +70,21 @@ export const continueWithGoogle = async (req, res) => {
         res.clearCookie("sid");
         return res.status(403).json({ message: "Your account has been deleted or blocked. Please contact the admin." });
       }
-      //login here 
-      const session = await Session.create({ userId: user._id });
-      const userSession = await Session.find({ userId: user._id });
-      if (userSession.length >= 3) {
-        await Session.findByIdAndDelete(userSession[0]._id);
-      }
-      res.cookie("sid", session._id, {
+      // login here 
+      const sessionId = crypto.randomUUID();
+      const redisKey = `session:${sessionId}`;
+      await RedisClient.json.set(redisKey, "$", { userId: user._id, rootDirId: user.rootDirId });
+      const sessionTTLSeconds = 60 * 60 * 24 * 7;
+      await RedisClient.expire(redisKey, sessionTTLSeconds);
+
+      res.cookie("sid", sessionId, {
         httpOnly: true,
         signed: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7,
+        maxAge: sessionTTLSeconds * 1000, // 7 days in ms
       });
       return res.status(200).json({ message: "Logged In" });
-    }
 
+    }
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -115,14 +116,17 @@ export const continueWithGoogle = async (req, res) => {
 
     await session.commitTransaction();
     session.endSession();
-    const userSession = await Session.create({ userId: newUserId });
+    const sessionId = crypto.randomUUID();
+    const redisKey = `session:${sessionId}`;
+    await RedisClient.json.set(redisKey, "$", { userId: user._id, rootDirId: user.rootDirId });
+    const sessionTTLSeconds = 60 * 60 * 24 * 7;
+    await RedisClient.expire(redisKey, sessionTTLSeconds);
 
-    res.cookie("sid", userSession._id, {
+    res.cookie("sid", sessionId, {
       httpOnly: true,
       signed: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7,
+      maxAge: sessionTTLSeconds * 1000, // 7 days in ms
     });
-
     return res.status(201).json({ message: "User registered successfully" });
 
   } catch (error) {
@@ -204,17 +208,16 @@ export const continueWithGithub = async (req, res) => {
     }
 
     if (user) {
-      // User exists, create new session(login)
-      const session = await Session.create({ userId: user._id });
-      const userSessions = await Session.find({ userId: user._id });
-      if (userSessions.length >= 3) {
-        await Session.findByIdAndDelete(userSessions[0]._id);
-      }
+      const sessionId = crypto.randomUUID();
+      const redisKey = `session:${sessionId}`;
+      await RedisClient.json.set(redisKey, "$", { userId: user._id, rootDirId: user.rootDirId });
+      const sessionTTLSeconds = 60 * 60 * 24 * 7;
+      await RedisClient.expire(redisKey, sessionTTLSeconds);
 
-      res.cookie("sid", session._id, {
+      res.cookie("sid", sessionId, {
         httpOnly: true,
         signed: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        maxAge: sessionTTLSeconds * 1000, // 7 days in ms
       });
 
       res.redirect("/");
@@ -252,11 +255,16 @@ export const continueWithGithub = async (req, res) => {
     await sessionDb.commitTransaction();
     sessionDb.endSession();
 
-    const newSession = await Session.create({ userId: newUserId });
-    res.cookie("sid", newSession._id, {
+    const sessionId = crypto.randomUUID();
+    const redisKey = `session:${sessionId}`;
+    await RedisClient.json.set(redisKey, "$", { userId: user._id, rootDirId: user.rootDirId });
+    const sessionTTLSeconds = 60 * 60 * 24 * 7;
+    await RedisClient.expire(redisKey, sessionTTLSeconds);
+
+    res.cookie("sid", sessionId, {
       httpOnly: true,
       signed: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7,
+      maxAge: sessionTTLSeconds * 1000, // 7 days in ms
     });
 
     return res.status(201).json({ message: "User registered with GitHub" });

@@ -36,7 +36,7 @@ export const createDirectory = async (req, res, next) => {
   }
   const parentDirId = req.params.parentDirId || user.rootDirId.toString();
   const dirname = req.body.dirname || "New Folder";
-
+ 
 
   try {
     const parentDir = await Directory.findById(parentDirId).lean();
