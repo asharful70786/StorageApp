@@ -70,11 +70,17 @@ export const continueWithGoogle = async (req, res) => {
         res.clearCookie("sid");
         return res.status(403).json({ message: "Your account has been deleted or blocked. Please contact the admin." });
       }
+      const result = await RedisClient.ft.search("userIdIdx", `@userId:{${user._id}}`);
+      const allSessions = result.documents || [];
+      if (allSessions.length >= 2) {
+        await RedisClient.del(allSessions.documents[0].id);
+      }
+
       // login here 
       const sessionId = crypto.randomUUID();
       const redisKey = `session:${sessionId}`;
       await RedisClient.json.set(redisKey, "$", { userId: user._id, rootDirId: user.rootDirId });
-      const sessionTTLSeconds = 60 * 60 * 24 * 7;
+      const sessionTTLSeconds = 60 * 60 * 24 * 7; // 7 days
       await RedisClient.expire(redisKey, sessionTTLSeconds);
 
       res.cookie("sid", sessionId, {
@@ -208,6 +214,11 @@ export const continueWithGithub = async (req, res) => {
     }
 
     if (user) {
+      const result = await RedisClient.ft.search("userIdIdx", `@userId:{${user._id}}`);
+      const allSessions = result.documents || [];
+      if (allSessions.length >= 2) {
+        await RedisClient.del(allSessions.documents[0].id);
+      }
       const sessionId = crypto.randomUUID();
       const redisKey = `session:${sessionId}`;
       await RedisClient.json.set(redisKey, "$", { userId: user._id, rootDirId: user.rootDirId });

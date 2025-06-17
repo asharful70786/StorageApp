@@ -85,12 +85,28 @@ export const login = async (req, res, next) => {
     if (!enteredPassword) {
       return res.status(401).json({ error: "Invalid Credentials  , User not found" });
     }
+
+    const result = await RedisClient.ft.search("userIdIdx", `@userId:{${user._id}}`);
+    const allSessions = result.documents || [];
+
+    if (allSessions.length >= 2) {
+      await RedisClient.del(allSessions.documents[0].id);
+    }
+
     const sessionId = crypto.randomUUID();
     const redisKey = `session:${sessionId}`;
-    await RedisClient.json.set(redisKey, "$", { userId: user._id, rootDirId: user.rootDirId });
 
-    const sessionExpiresAt = Date.now() + 1000 * 60 * 60 * 24 * 7;
-    await RedisClient.expire(redisKey, Math.floor(sessionExpiresAt / 1000));
+    const sessionTTLSeconds = 60 * 60 * 24 * 7; // 7 days
+    const sessionExpiresAt = Date.now() + sessionTTLSeconds * 1000;
+
+    await RedisClient.json.set(redisKey, "$", {
+      userId: user._id,
+      rootDirId: user.rootDirId,
+      expiresAt: sessionExpiresAt
+    });
+
+    await RedisClient.expire(redisKey, sessionTTLSeconds);
+
 
     res.cookie("sid", sessionId, {
       httpOnly: true,
@@ -106,13 +122,17 @@ export const login = async (req, res, next) => {
 
 export const getCurrentUser = async (req, res) => {
   const { sid } = req.signedCookies;
-  const user = await User.findById({ _id: req.user._id }).select("-password -__v -isDeleted -rootDirId -role").lean();
-  res.status(200).json({
-    name: user.name,
-    email: user.email,
-    picture: user.picture,
-    role: user.role
-  });
+  try {
+    const user = await User.findById({ _id: req.user._id }).select("-password -__v -isDeleted -rootDirId -role").lean();
+    res.status(200).json({
+      name: user.name,
+      email: user.email,
+      picture: user.picture,
+      role: user.role
+    });
+  } catch (error) {
+    res.json({ error: "errror on Fetching user Info" });
+  }
 };
 
 export const logout = async (req, res) => {
