@@ -87,36 +87,28 @@ export const login = async (req, res, next) => {
     }
 
     const result = await RedisClient.ft.search("userIdIdx", `@userId:{${user._id}}`);
+    console.log(result);
     const allSessions = result.documents || [];
-
     if (allSessions.length >= 2) {
-      await RedisClient.del(allSessions.documents[0].id);
+      await RedisClient.del(allSessions[0].id);
     }
 
+    // login here 
     const sessionId = crypto.randomUUID();
     const redisKey = `session:${sessionId}`;
-
+    await RedisClient.json.set(redisKey, "$", { userId: user._id, rootDirId: user.rootDirId });
     const sessionTTLSeconds = 60 * 60 * 24 * 7; // 7 days
-    const sessionExpiresAt = Date.now() + sessionTTLSeconds * 1000;
-
-    await RedisClient.json.set(redisKey, "$", {
-      userId: user._id,
-      rootDirId: user.rootDirId,
-      expiresAt: sessionExpiresAt
-    });
-
     await RedisClient.expire(redisKey, sessionTTLSeconds);
-
 
     res.cookie("sid", sessionId, {
       httpOnly: true,
       signed: true,
-      maxAge: sessionExpiresAt,
+      maxAge: sessionTTLSeconds * 1000, // 7 days in ms
     });
     return res.status(200).json({ message: "Logged In" });
   } catch (error) {
     console.log("Error in login:", error);
-    return res.status(500).json({ error: "Internal Server Error at login time 1" });
+    return res.status(500).json({ error: "Internal Server Error at login time 1", error: error.message });
   }
 };
 
@@ -146,7 +138,7 @@ export const logout = async (req, res) => {
 
 export const logoutAll = async (req, res) => {
   try {
-    await Session.deleteMany({ userId: req.user._id });
+    await RedisClient.del(`session:${req.signedCookies.sid}`);
     res.clearCookie("sid");
     return res.status(204).end();
   } catch (error) {

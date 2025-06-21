@@ -70,10 +70,12 @@ export const continueWithGoogle = async (req, res) => {
         res.clearCookie("sid");
         return res.status(403).json({ message: "Your account has been deleted or blocked. Please contact the admin." });
       }
+
       const result = await RedisClient.ft.search("userIdIdx", `@userId:{${user._id}}`);
+      console.log(result);
       const allSessions = result.documents || [];
       if (allSessions.length >= 2) {
-        await RedisClient.del(allSessions.documents[0].id);
+        await RedisClient.del(allSessions[0].id);
       }
 
       // login here 
