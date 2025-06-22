@@ -204,22 +204,23 @@ export const continueWithGithub = async (req, res) => {
     if (!name) {
       name = primaryEmail.split('@')[0];
     }
-    console.log(avatar_url, name)
     const email = primaryEmail;
 
     // Step 4: Check if user already exists
     let user = await User.findOne({ email });
     //soft deleted apply
-    if (user.isDeleted) {
-      res.clearCookie("sid");
-      return res.status(403).json({ message: "Your account has been deleted or blocked. Please contact the admin." });
+    if (user) {
+      if (user.isDeleted) {
+        res.clearCookie("sid");
+        return res.status(403).json({ message: "Your account has been deleted or blocked. Please contact the admin." });
+      }
     }
 
     if (user) {
       const result = await RedisClient.ft.search("userIdIdx", `@userId:{${user._id}}`);
       const allSessions = result.documents || [];
       if (allSessions.length >= 2) {
-        await RedisClient.del(allSessions.documents[0].id);
+        await RedisClient.del(allSessions[0].id);
       }
       const sessionId = crypto.randomUUID();
       const redisKey = `session:${sessionId}`;
@@ -233,8 +234,8 @@ export const continueWithGithub = async (req, res) => {
         maxAge: sessionTTLSeconds * 1000, // 7 days in ms
       });
 
-      res.redirect("/");
-      //  res.status(200).json({ message: "Logged In with GitHub" });
+      return res.redirect("http://localhost:5173");
+
     }
 
     // Step 5: Register new user
@@ -267,19 +268,6 @@ export const continueWithGithub = async (req, res) => {
 
     await sessionDb.commitTransaction();
     sessionDb.endSession();
-
-    const sessionId = crypto.randomUUID();
-    const redisKey = `session:${sessionId}`;
-    await RedisClient.json.set(redisKey, "$", { userId: user._id, rootDirId: user.rootDirId });
-    const sessionTTLSeconds = 60 * 60 * 24 * 7;
-    await RedisClient.expire(redisKey, sessionTTLSeconds);
-
-    res.cookie("sid", sessionId, {
-      httpOnly: true,
-      signed: true,
-      maxAge: sessionTTLSeconds * 1000, // 7 days in ms
-    });
-
     return res.status(201).json({ message: "User registered with GitHub" });
 
   } catch (error) {
