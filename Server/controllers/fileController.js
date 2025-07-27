@@ -1,25 +1,35 @@
-import { createWriteStream } from "fs";
+import { createWriteStream, write } from "fs";
 import { rm } from "fs/promises";
 import path from "path";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
+import { abort } from "process";
 
 export const uploadFile = async (req, res, next) => {
   const parentDirId = req.params.parentDirId || req.user.rootDirId;
+
   try {
     const parentDirData = await Directory.findOne({
       _id: parentDirId,
       userId: req.user._id,
     });
 
-    // Check if parent directory exists
     if (!parentDirData) {
       return res.status(404).json({ error: "Parent directory not found!" });
     }
 
     const filename = req.headers.filename || "untitled";
-    const filesize = req.headers.filesize;
-    console.log(typeof filesize);
+    const filesize = parseInt(req.headers.filesize, 10);
+
+    if (isNaN(filesize)) {
+      return res.status(400).json({ error: "Invalid file size" });
+    }
+
+    if (filesize > 50 * 1024 * 1024) {
+      req.destroy();
+      return res.status(400).json({ error: "File size is too large" });
+    }
+
     const extension = path.extname(filename);
 
     const insertedFile = await File.insertOne({
@@ -30,23 +40,36 @@ export const uploadFile = async (req, res, next) => {
       userId: req.user._id,
     });
 
-    const fileId = insertedFile.id;
-
+    const fileId = insertedFile.insertedId;
     const fullFileName = `${fileId}${extension}`;
+    const filePath = `./storage/${fullFileName}`;
+    const writeStream = createWriteStream(filePath);
 
-    const writeStream = createWriteStream(`./storage/${fullFileName}`);
-    req.pipe(writeStream);
+    let totalFileSize = 0;
+
+    req.on("data", async (chunk) => {
+      totalFileSize += chunk.length;
+      if (totalFileSize > filesize) {
+        writeStream.close();
+        await File.deleteOne({ _id: insertedFile.insertedId });
+        await rm(filePath);
+        return req.destroy();
+      }
+      writeStream.write(chunk);
+    });
 
     req.on("end", async () => {
+      writeStream.end();
       return res.status(201).json({ message: "File Uploaded" });
     });
 
     req.on("error", async () => {
       await File.deleteOne({ _id: insertedFile.insertedId });
-      return res.status(404).json({ message: "Could not Upload File" });
+      return res.status(500).json({ message: "Could not upload file" });
     });
+
   } catch (err) {
-    console.log(err);
+    console.error(err);
     next(err);
   }
 };

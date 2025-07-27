@@ -10,7 +10,7 @@ import { connectDB } from "./config/db.js";
 
 await connectDB();
 
-const PORT = process.env.PORT || 4000;
+const PORT =  4000;
 
 const app = express();
 app.use(cookieParser(process.env.SESSION_SECRET));
