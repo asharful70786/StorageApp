@@ -3,10 +3,13 @@ import { rm } from "fs/promises";
 import path from "path";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
-import { abort } from "process";
+import manipulateDirSize from "../utils/Manipulate_DirSize.js";
+import User from "../models/userModel.js";
 
 export const uploadFile = async (req, res, next) => {
   const parentDirId = req.params.parentDirId || req.user.rootDirId;
+
+
 
   try {
     const parentDirData = await Directory.findOne({
@@ -25,22 +28,37 @@ export const uploadFile = async (req, res, next) => {
       return res.status(400).json({ error: "Invalid file size" });
     }
 
-    if (filesize > 50 * 1024 * 1024) {
+    const root_ParentDir = await Directory.findOne({
+      _id: req.user.rootDirId,
+    });
+
+    // can upload the max storage here 1 gb check
+    const userInfo = await User.findOne({ _id: req.user._id }).lean();
+
+    if (root_ParentDir.size + filesize > userInfo.maxStorageInBytes) {
+      console.log("Storage limit exceeded");
+      res.status(400).json({ error: "Storage limit exceeded" });
       req.destroy();
-      return res.status(400).json({ error: "File size is too large" });
+      return;
+    }
+    if (filesize > 50 * 1024 * 1024) {
+      res.status(400).json({ error: "File size is too large" });
+      req.destroy();
+      return
     }
 
     const extension = path.extname(filename);
 
-    const insertedFile = await File.insertOne({
+    const insertedFile = await File.create({
       extension,
       name: filename,
       size: filesize,
       parentDirId: parentDirData._id,
       userId: req.user._id,
     });
+    const fileId = insertedFile._id;
 
-    const fileId = insertedFile.insertedId;
+
     const fullFileName = `${fileId}${extension}`;
     const filePath = `./storage/${fullFileName}`;
     const writeStream = createWriteStream(filePath);
@@ -60,6 +78,7 @@ export const uploadFile = async (req, res, next) => {
 
     req.on("end", async () => {
       writeStream.end();
+      await manipulateDirSize(parentDirId, totalFileSize);
       return res.status(201).json({ message: "File Uploaded" });
     });
 
@@ -128,7 +147,7 @@ export const deleteFile = async (req, res, next) => {
   const file = await File.findOne({
     _id: id,
     userId: req.user._id,
-  }).select("extension");
+  });
 
   if (!file) {
     return res.status(404).json({ error: "File not found!" });
@@ -137,6 +156,7 @@ export const deleteFile = async (req, res, next) => {
   try {
     await rm(`./storage/${id}${file.extension}`);
     await file.deleteOne();
+    await manipulateDirSize(file.parentDirId, -file.size);
     return res.status(200).json({ message: "File Deleted Successfully" });
   } catch (err) {
     next(err);

@@ -1,6 +1,7 @@
 import { rm } from "fs/promises";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
+import manipulateDirSize from "../utils/Manipulate_DirSize.js";
 
 export const getDirectory = async (req, res) => {
   const user = req.user;
@@ -82,20 +83,18 @@ export const deleteDirectory = async (req, res, next) => {
     const directoryData = await Directory.findOne({
       _id: id,
       userId: req.user._id,
-    })
-      .select("_id")
+     })
       .lean();
 
-    if (!directoryData) {
+     if (!directoryData) {
       return res.status(404).json({ error: "Directory not found!" });
-    }
+     }
 
-    async function getDirectoryContents(id) {
+     async function getDirectoryContents(id) {
       let files = await File.find({ parentDirId: id })
         .select("extension")
         .lean();
       let directories = await Directory.find({ parentDirId: id })
-        .select("_id")
         .lean();
 
       for (const { _id } of directories) {
@@ -122,8 +121,11 @@ export const deleteDirectory = async (req, res, next) => {
     await Directory.deleteMany({
       _id: { $in: [...directories.map(({ _id }) => _id), id] },
     });
+     await manipulateDirSize(directoryData.parentDirId, -directoryData.size);
+
   } catch (err) {
     next(err);
   }
+ 
   return res.json({ message: "Files deleted successfully" });
 };

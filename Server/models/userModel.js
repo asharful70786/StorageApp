@@ -29,6 +29,10 @@ const userSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Directory",
     },
+    maxStorageInBytes: {
+      type: Number,
+      default: 1024 ** 3
+    },
     picture: {
       type: String,
       default:
