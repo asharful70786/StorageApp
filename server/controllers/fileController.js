@@ -4,6 +4,7 @@ import path from "path";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
 import User from "../models/userModel.js";
+import { clound_Front_Get_Url, creteUploadSignedUrl } from "../config/s3.js";
 
 export async function updateDirectoriesSize(parentId, deltaSize) {
   while (parentId) {
@@ -108,24 +109,25 @@ export const getFile = async (req, res) => {
     _id: id,
     userId: req.user._id,
   }).lean();
-  // Check if file exists
+
   if (!fileData) {
     return res.status(404).json({ error: "File not found!" });
   }
 
-  // If "download" is requested, set the appropriate headers
-  const filePath = `${process.cwd()}/storage/${id}${fileData.extension}`;
 
   if (req.query.action === "download") {
-    return res.download(filePath, fileData.name);
+    let signedUrl =await  clound_Front_Get_Url({
+      key : `${id}${fileData.extension}` , 
+      download : true , fileName : fileData.name
+    });
+    return res.redirect(signedUrl);
   }
 
-  // Send file
-  return res.sendFile(filePath, (err) => {
-    if (!res.headersSent && err) {
-      return res.status(404).json({ error: "File not found!" });
-    }
-  });
+
+   let signedUrl =await  clound_Front_Get_Url({
+      key : `${id}${fileData.extension}`,fileName : fileData.name}
+    );
+    return res.redirect(signedUrl);
 };
 
 export const renameFile = async (req, res, next) => {
@@ -171,3 +173,57 @@ export const deleteFile = async (req, res, next) => {
     next(err);
   }
 };
+
+
+export const HandleFileInit = async(req , res) => {
+  console.log(req.body);
+  //insert to DB 
+
+   const parentDirId = req.body.parentDirId || req.user.rootDirId;
+  try {
+    const parentDirData = await Directory.findOne({
+      _id: parentDirId,
+      userId: req.user._id,
+    });
+
+    // Check if parent directory exists
+    if (!parentDirData) {
+      return res.status(404).json({ error: "Parent directory not found!" });
+    }
+
+    const filename = req.body.filename || "untitled";
+    const filesize = req.body.filesize; 
+
+    const user = await User.findById(req.user._id);
+    const rootDir = await Directory.findById(req.user.rootDirId);
+
+    const remainingSpace = user.maxStorageInBytes - rootDir.size;
+
+    if (filesize > remainingSpace) {
+      console.log("File too large");
+      return res.status(507).json({ error: "You have reached your storage limit !" });
+    }
+
+    const extension = path.extname(filename);
+    console.log(extension);
+
+  const insertedFile =  await File.insertOne({
+      extension,
+      name: filename,
+      size: filesize,
+      parentDirId: parentDirData._id,
+      userId: req.user._id,
+      isUploading: true,
+    });
+
+  const url = await creteUploadSignedUrl({
+    Key: `${insertedFile._id}${extension}`,
+    ContentType: req.body.contentType
+  });
+  return res.status(200).json({upload_File_Url : url , fileId : insertedFile.id});
+  
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: "Error while creating file!" });
+  }
+}

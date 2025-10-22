@@ -22,6 +22,10 @@ const fileSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Directory",
     },
+    isUploading : {
+      type : Boolean,
+      default : true
+    }
   },
   {
     strict: "throw",
