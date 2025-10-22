@@ -13,7 +13,7 @@ import {
   renameDirectory,
 } from "./api/directoryApi";
 
-import { deleteFile, renameFile } from "./api/fileApi";
+import { deleteFile, renameFile, uploadInitiate } from "./api/fileApi";
 import DetailsPopup from "./components/DetailsPopup";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModel";
 
@@ -100,7 +100,7 @@ function DirectoryView() {
     else window.location.href = `http://localhost:4000/file/${id}`;
   }
 
-  function handleFileSelect(e) {
+  async function handleFileSelect(e) {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -120,23 +120,28 @@ function DirectoryView() {
       progress: 0,
     };
 
+  const data = await uploadInitiate({
+      filename: file.name,
+      filesize: file.size,
+      contentType : file.type,
+      parentDirId : dirId
+    });
+
+    const {upload_File_Url , fileId} = data;
+
     // Optimistically show the file in the list
     setFilesList((prev) => [tempItem, ...prev]);
     setUploadItem(tempItem);
     e.target.value = "";
 
-    startUpload(tempItem);
+    startUpload({item : tempItem ,uploadUrl :  upload_File_Url , fileId});
   }
 
-  function startUpload(item) {
+  function startUpload({ item, uploadUrl  , fileId}) {
     const xhr = new XMLHttpRequest();
     xhrRef.current = xhr;
 
-    xhr.open("POST", `http://localhost:4000/file/${dirId || ""}`);
-    xhr.withCredentials = true;
-    xhr.setRequestHeader("filename", item.name);
-    xhr.setRequestHeader("filesize", item.size);
-
+    xhr.open("PUT", `${uploadUrl}` );
     xhr.upload.addEventListener("progress", (evt) => {
       if (evt.lengthComputable) {
         const progress = (evt.loaded / evt.total) * 100;

@@ -12,3 +12,8 @@ export const renameFile = async (id, newFilename) => {
   return data;
 };
 
+
+export const uploadInitiate = async (fileData) => {
+  const { data } = await axiosWithCreds.post(`/file/upload/initiate`, fileData );
+  return data;
+};
