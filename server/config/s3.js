@@ -1,4 +1,4 @@
-import { DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getSignedUrl as getCloudFrontSignedUrl } from "@aws-sdk/cloudfront-signer";
 
@@ -57,3 +57,26 @@ export const deleteS3File = async ({Key})=> {
    return error.message
  }
 }
+
+export const deleteS3Files = async (Keys) => {
+  if (!Array.isArray(Keys) || Keys.length === 0) {
+    console.warn("No keys to delete.");
+    return;
+  }
+
+  const command = new DeleteObjectsCommand({
+    Bucket: "private-storageapp",
+    Delete: {
+      Objects: Keys.map((key) => ({ Key: key })),
+      Quiet: true,
+    },
+  });
+
+  try {
+    const response = await s3Client.send(command);
+    return response;
+  } catch (error) {
+    console.error("❌ S3 delete error:", error);
+    throw error;
+  }
+};
