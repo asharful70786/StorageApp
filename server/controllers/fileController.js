@@ -4,7 +4,8 @@ import path from "path";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
 import User from "../models/userModel.js";
-import { clound_Front_Get_Url, creteUploadSignedUrl, deleteS3File, get_S3_File_Meta_Data } from "../config/s3.js";
+import {  creteUploadSignedUrl, deleteS3File, get_S3_File_Meta_Data } from "../services/s3.js";
+import { cloud_Front_Get_Url } from "../config/CloundFront.js";
 
 export async function updateDirectoriesSize(parentId, deltaSize) {
   while (parentId) {
@@ -53,45 +54,45 @@ export const uploadFile = async (req, res, next) => {
 
     const fileId = insertedFile.id;
 
-    const fullFileName = `${fileId}${extension}`;
-    const filePath = `./storage/${fullFileName}`;
+    // const fullFileName = `${fileId}${extension}`;
+    // const filePath = `./storage/${fullFileName}`;
 
-    const writeStream = createWriteStream(filePath);
+    // const writeStream = createWriteStream(filePath);
 
     let totalFileSize = 0;
     let aborted = false;
     let fileUploadCompleted = false;
 
-    req.on("data", async (chunk) => {
-      if (aborted) return;
-      totalFileSize += chunk.length;
-      if (totalFileSize > filesize) {
-        aborted = true;
-        writeStream.close();
-        await insertedFile.deleteOne();
-        await rm(filePath);
-        return req.destroy();
-      }
-      writeStream.write(chunk);
-    });
+    // req.on("data", async (chunk) => {
+    //   if (aborted) return;
+    //   totalFileSize += chunk.length;
+    //   if (totalFileSize > filesize) {
+    //     aborted = true;
+    //     writeStream.close();
+    //     await insertedFile.deleteOne();
+    //     await rm(filePath);
+    //     return req.destroy();
+    //   }
+    //   writeStream.write(chunk);
+    // });
 
-    req.on("end", async () => {
-      fileUploadCompleted = true;
-      await updateDirectoriesSize(parentDirId, totalFileSize);
-      return res.status(201).json({ message: "File Uploaded" });
-    });
+    // req.on("end", async () => {
+    //   fileUploadCompleted = true;
+    //   await updateDirectoriesSize(parentDirId, totalFileSize);
+    //   return res.status(201).json({ message: "File Uploaded" });
+    // });
 
-    req.on("close", async () => {
-      if (!fileUploadCompleted) {
-        try {
-          await insertedFile.deleteOne();
-          await rm(filePath);
-          console.log("file cleaned");
-        } catch (err) {
-          console.error("Error cleaning up aborted upload:", err);
-        }
-      }
-    });
+    // req.on("close", async () => {
+    //   if (!fileUploadCompleted) {
+    //     try {
+    //       await insertedFile.deleteOne();
+    //       await rm(filePath);
+    //       console.log("file cleaned");
+    //     } catch (err) {
+    //       console.error("Error cleaning up aborted upload:", err);
+    //     }
+    //   }
+    // });
     
     req.on("error", async () => {
       await File.deleteOne({ _id: insertedFile.insertedId });
@@ -105,7 +106,8 @@ export const uploadFile = async (req, res, next) => {
 
 export const getFile = async (req, res) => {
   const { id } = req.params;
-  const fileData = await File.findOne({
+try {
+    const fileData = await File.findOne({
     _id: id,
     userId: req.user._id,
   }).lean();
@@ -116,7 +118,7 @@ export const getFile = async (req, res) => {
 
 
   if (req.query.action === "download") {
-    let signedUrl =await  clound_Front_Get_Url({
+    let signedUrl =  cloud_Front_Get_Url({
       key : `${id}${fileData.extension}` , 
       download : true , fileName : fileData.name
     });
@@ -124,10 +126,14 @@ export const getFile = async (req, res) => {
   }
 
 
-   let signedUrl =await  clound_Front_Get_Url({
+   let signedUrl =  cloud_Front_Get_Url({
       key : `${id}${fileData.extension}`,fileName : fileData.name}
     );
     return res.redirect(signedUrl);
+} catch (error) {
+  console.log(error);
+  next(error);
+}
 };
 
 export const renameFile = async (req, res, next) => {

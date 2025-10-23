@@ -2,7 +2,7 @@ import { rm } from "fs/promises";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
 import { updateDirectoriesSize } from "./fileController.js";
-import { deleteS3Files } from "../config/s3.js";
+import { deleteS3Files } from "../services/s3.js";
 
 export const getDirectory = async (req, res) => {
   const user = req.user;
