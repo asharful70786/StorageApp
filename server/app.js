@@ -28,6 +28,10 @@ app.use(
   })
 );
 
+app.get("/", (req , res) =>{
+  res.status(200).json({message : "Server is running"})
+})
+
 app.use("/directory", checkAuth, directoryRoutes);
 app.use("/file", checkAuth, fileRoutes);
 app.use("/", userRoutes);
@@ -44,4 +48,3 @@ app.listen(PORT, () => {
 });
 
 
-// https://stackoverflow.com/questions/18367824/how-to-cancel-http-upload-from-data-events
