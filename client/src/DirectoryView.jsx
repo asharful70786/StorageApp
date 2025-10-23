@@ -13,7 +13,7 @@ import {
   renameDirectory,
 } from "./api/directoryApi";
 
-import { deleteFile, renameFile, uploadInitiate } from "./api/fileApi";
+import { deleteFile, renameFile, uploadComplete, uploadInitiate } from "./api/fileApi";
 import DetailsPopup from "./components/DetailsPopup";
 import ConfirmDeleteModal from "./components/ConfirmDeleteModel";
 
@@ -137,7 +137,7 @@ function DirectoryView() {
     startUpload({item : tempItem ,uploadUrl :  upload_File_Url , fileId});
   }
 
-  function startUpload({ item, uploadUrl  , fileId}) {
+  async function startUpload({ item, uploadUrl  , fileId}) {
     const xhr = new XMLHttpRequest();
     xhrRef.current = xhr;
 
@@ -149,8 +149,13 @@ function DirectoryView() {
       }
     });
 
-    xhr.onload = () => {
+    xhr.onload =async () => {
       // Clear upload state and refresh directory
+      if(xhr.status === 200){
+      const fileUploadResponse = await  uploadComplete(fileId);
+      console.log("req hit after upload comp ")
+      console.log(fileUploadResponse);
+      }
       setUploadItem(null);
       loadDirectory();
     };
