@@ -4,7 +4,7 @@ import path from "path";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
 import User from "../models/userModel.js";
-import { clound_Front_Get_Url, creteUploadSignedUrl } from "../config/s3.js";
+import { clound_Front_Get_Url, creteUploadSignedUrl, get_S3_File_Meta_Data } from "../config/s3.js";
 
 export async function updateDirectoriesSize(parentId, deltaSize) {
   while (parentId) {
@@ -176,7 +176,7 @@ export const deleteFile = async (req, res, next) => {
 
 
 export const HandleFileInit = async(req , res) => {
-  console.log(req.body);
+
   //insert to DB 
 
    const parentDirId = req.body.parentDirId || req.user.rootDirId;
@@ -205,7 +205,7 @@ export const HandleFileInit = async(req , res) => {
     }
 
     const extension = path.extname(filename);
-    console.log(extension);
+
 
   const insertedFile =  await File.insertOne({
       extension,
@@ -226,4 +226,32 @@ export const HandleFileInit = async(req , res) => {
     console.log(err);
     return res.status(500).json({ error: "Error while creating file!" });
   }
+}
+
+export const upload_Complete = async(req , res) => {
+   try {
+  const file = await File.findOne({  _id : req.body.fileId  });
+  if (!file)return res.status(404).json({ error: "File not found!" });
+
+
+  const s3MetaData = await get_S3_File_Meta_Data({
+    Key : `${file._id}${file.extension}`
+  });
+
+  if(!s3MetaData) return res.status(404).json({ error: "File not  properly uploaded" });  
+  if(s3MetaData.ContentLength !== file.size) {
+    //here will be if the file Big then delete from S3 
+    return res.status(404).json({ error: "file size not matched " });
+  }
+
+
+  await File.findByIdAndUpdate(file._id , {isUploading : false});
+  await updateDirectoriesSize(file.parentDirId, file.size);
+  console.log("Done")
+
+    return res.status(200).json({ message: "File Uploaded Successfully" });
+  } catch (err) {
+    next(err);
+  }
+
 }

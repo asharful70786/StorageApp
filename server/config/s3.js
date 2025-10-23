@@ -1,4 +1,4 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getSignedUrl as getCloudFrontSignedUrl } from "@aws-sdk/cloudfront-signer";
 
@@ -30,3 +30,15 @@ export const clound_Front_Get_Url = async ({key , download = false , fileName })
   return url ; 
 } 
 
+
+
+export const get_S3_File_Meta_Data  = async ({Key})=> {
+  const command = new HeadObjectCommand({
+    Bucket : "private-storageapp",
+    Key
+  });
+  return await s3Client.send(command).then((data) => {
+    return data; 
+  })
+  
+}
