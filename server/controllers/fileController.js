@@ -4,7 +4,7 @@ import path from "path";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
 import User from "../models/userModel.js";
-import { clound_Front_Get_Url, creteUploadSignedUrl, get_S3_File_Meta_Data } from "../config/s3.js";
+import { clound_Front_Get_Url, creteUploadSignedUrl, deleteS3File, get_S3_File_Meta_Data } from "../config/s3.js";
 
 export async function updateDirectoriesSize(parentId, deltaSize) {
   while (parentId) {
@@ -155,19 +155,22 @@ export const renameFile = async (req, res, next) => {
 
 export const deleteFile = async (req, res, next) => {
   const { id } = req.params;
+  
   const file = await File.findOne({
     _id: id,
     userId: req.user._id,
   });
+
 
   if (!file) {
     return res.status(404).json({ error: "File not found!" });
   }
 
   try {
-    await file.deleteOne();
-    await updateDirectoriesSize(file.parentDirId, -file.size);
-    await rm(`./storage/${id}${file.extension}`);
+     await File.deleteOne();
+     await updateDirectoriesSize(file.parentDirId, -file.size);
+    await deleteS3File({Key : `${id}${file.extension}`});
+   
     return res.status(200).json({ message: "File Deleted Successfully" });
   } catch (err) {
     next(err);
@@ -247,7 +250,6 @@ export const upload_Complete = async(req , res) => {
 
   await File.findByIdAndUpdate(file._id , {isUploading : false});
   await updateDirectoriesSize(file.parentDirId, file.size);
-  console.log("Done")
 
     return res.status(200).json({ message: "File Uploaded Successfully" });
   } catch (err) {
