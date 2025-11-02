@@ -21,6 +21,9 @@ await connectDB();
 const PORT = process.env.PORT || 4000;
 
 const app = express();
+//for webhook with row data 
+app.use("/webhook" , express.raw({ type: "application/json" }), webHook);
+
 app.use(cookieParser(process.env.SESSION_SECRET));
 app.use(express.json());
 app.use(
@@ -39,7 +42,7 @@ app.use("/file", checkAuth, fileRoutes);
 app.use("/", userRoutes);
 app.use("/auth", authRoutes);
 app.use("/subscription" , subscriptionRoute);
-app.use("/webhook" , webHook);
+
 
 app.use((err, req, res, next) => {
   console.log(err);

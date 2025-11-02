@@ -15,20 +15,19 @@ export const createSubscription = async (req, res) => {
  const { planId } = req.body; 
   console.log(planId);
   try {
-    const subscription = await razorpay.subscriptions.create({plan_id: planId , total_count: 1});
-    // console.log(subscription);
+    const subscription = await razorpay.subscriptions.create({plan_id: planId , total_count: 1 , notes: {
+  userId: req.user._id.toString()}});
+
   
     const sub = await Subscription.create({
       subscriptionId: subscription.id,
       userId: req.user._id,
       plan: planId,
     });
+    console.log(sub);
 
-    return res.json({ subscriptionId: subscription.id  });
+    return res.json({ subscriptionId: subscription.id , userId: req.user._id });
   
-
-
-    // return res.json({ subscriptionId: "sub_Ra4mVbSZHQZB0D"  });
   } catch (error) {
     return res.status(500).json({ error: error.message }); 
   }
