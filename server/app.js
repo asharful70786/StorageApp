@@ -8,6 +8,7 @@ import authRoutes from "./routes/authRoutes.js";
 import checkAuth from "./middlewares/authMiddleware.js";
 import { connectDB } from "./config/db.js";
 import subscriptionRoute from "./routes/subscriptionRoute.js";
+import webHook from "./routes/webHook.js";
 // import { createUserIdIndex } from "./config/createRedisIndex.js";
 
 
@@ -38,6 +39,7 @@ app.use("/file", checkAuth, fileRoutes);
 app.use("/", userRoutes);
 app.use("/auth", authRoutes);
 app.use("/subscription" , subscriptionRoute);
+app.use("/webhook" , webHook);
 
 app.use((err, req, res, next) => {
   console.log(err);
