@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { CreateSubscription } from "./src/api/Subscription";
+import { createSubscription } from "./api/subscriptionApi";
 
 const PLAN_CATALOG = {
   monthly: [
@@ -187,27 +187,22 @@ export default function Plans() {
   const [mode, setMode] = useState("monthly");
   const plans = PLAN_CATALOG[mode];
 
-async function handleSelect(plan) {
-  try {
-    const res = await CreateSubscription(plan.id);
+  useEffect(() => {
+    const razorpayScript = document.querySelector("#razorpay-script");
+    if (razorpayScript) return;
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.id = "razorpay-script";
+    document.body.appendChild(script);
+  }, []);
 
-    if (! res.subscriptionId) {
-      alert("Failed to create subscription");
-      return;
-    }
-    // console.log(res);
-    openRazorpayPopup(res.subscriptionId , res.userId);
-
-  } catch (err) {
-    console.error("Error:", err);
-    alert("Error creating subscription");
+  async function handleSelect(plan) {
+    const { subscriptionId } = await createSubscription(plan.id);
+    console.log(subscriptionId);
+    openRazorpayPopup({ subscriptionId });
   }
-}
 
-
-
-
-  
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <header className="mb-6 flex items-center justify-between">
@@ -262,35 +257,27 @@ async function handleSelect(plan) {
   );
 }
 
-
-
-
-function openRazorpayPopup(subscriptionId , userId ) {
-
-  const options = {
-    key: "rzp_test_RTFBYFE9yirDdi", 
-    subscription_id: subscriptionId, 
-    name: "StorageApp",
-    description: "",
-    image: "https://yourapp.com/logo.png", 
-    theme: {
-      color: "#3399cc",
-    },
+function openRazorpayPopup({ subscriptionId, user, course, onClose }) {
+  console.log(subscriptionId);
+  const rzp = new Razorpay({
+    // key: "rzp_live_RQtKefrYAszEWo",
+    key: "rzp_test_RTFBYFE9yirDdi",
+    description: "My first test payment.",
+    name: "ProCodrr Labs",
+    subscription_id: subscriptionId,
+    image: "http://localhost:5173/procodrr.png",
     notes: {
-      userId : userId ,
+      // courseId: course.id,
+      // courseName: course.name,
     },
-    handler: function (response) {
-      console.log("Payment success:", response);
-      alert("Payment Successful!");
-      // You can call backend verification here
+    handler: async function (response) {
+      console.log(response);
     },
-    modal: {
-      ondismiss: function () {
-        console.log("Payment popup closed");
-      },
-    },
-  };
+  });
 
-  const razorpay = new window.Razorpay(options);
-  razorpay.open();
+  rzp.on("payment.failed", function (response) {
+    console.log(response);
+  });
+
+  rzp.open();
 }
