@@ -1,20 +1,23 @@
 import { model, Schema } from "mongoose";
 import bcrypt from "bcrypt";
+import { type } from "os";
 
 const userSchema = new Schema(
   {
-    // 👤 Basic Info
     name: {
       type: String,
       required: true,
-      minLength: [3, "name field should have at least three characters"],
+      minLength: [
+        3,
+        "name field should a string with at least three characters",
+      ],
     },
     email: {
       type: String,
       required: true,
       unique: true,
       match: [
-        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}$/,
         "please enter a valid email",
       ],
     },
@@ -36,44 +39,18 @@ const userSchema = new Schema(
       enum: ["Admin", "Manager", "User"],
       default: "User",
     },
-
-    // 💳 Subscription & Billing
-    planStatus: {
-      type: String,
-      enum: ["inactive", "active", "canceled", "expired", "completed"],
-      default: "inactive",
-    },
-    currentPlan: {
-      type: String,
-      default: "free", // Razorpay plan_id or label
-    },
-    subscriptionId: {
-      type: String,
-      default: null, // Razorpay subscription ID
-    },
-    planStart: {
-      type: Date,
-      default: null,
-    },
-    planEnd: {
-      type: Date,
-      default: null,
-    },
     maxStorageInBytes: {
       type: Number,
       required: true,
-      default: 1 * 1024 ** 3, // 1 GB free tier
+      default: 15 * 1024 ** 3,
     },
-
-    // 🗑️ Soft delete flag
     deleted: {
       type: Boolean,
       default: false,
     },
   },
   {
-    strict: "throw", // ensures no undeclared field can be saved
-    timestamps: true, // adds createdAt and updatedAt automatically
+    strict: "throw",
   }
 );
 
@@ -83,15 +60,10 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-
-userSchema.index({ email: 1 });
-userSchema.index({ subscriptionId: 1 });
-userSchema.index({ planStatus: 1 });
-
 const User = model("User", userSchema);
+
 export default User;

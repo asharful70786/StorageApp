@@ -1,44 +1,36 @@
-import mongoose from "mongoose";
+import { model, Schema } from "mongoose";
 
-const SubscriptionSchema = new mongoose.Schema({
-  subscriptionId: {
-    type: String,
-    required: true,
-    unique: true,
+const subscriptionSchema = new Schema(
+  {
+    razorpaySubscriptionId: {
+      type: String,
+      required: true,
+    },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: [
+        "created",
+        "active",
+        "pending",
+        "past_due",
+        "paused",
+        "canceled",
+        "in_grace",
+      ],
+      default: "created",
+    },
   },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
-  status: {
-    type: String,
-    enum: [
-      "created",
-      "pending",
-      "active",
-      "canceled",
-      "incomplete_expired",
-      "incomplete",
-      "expired",
-      "in_Gray",
-      "completed",
-    ],
-    default: "created",
-  },
-  plan: {
-    type: String,
-    required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  {
+    strict: "throw",
+    timestamps: true,
+  }
+);
 
-const Subscription = mongoose.model("Subscription", SubscriptionSchema);
+const Subscription = model("Subscription", subscriptionSchema);
+
 export default Subscription;

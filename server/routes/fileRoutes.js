@@ -3,23 +3,18 @@ import validateIdMiddleware from "../middlewares/validateIdMiddleware.js";
 import {
   deleteFile,
   getFile,
-  HandleFileInit,
   renameFile,
-  upload_Complete,
-  uploadFile,
+  uploadComplete,
+  uploadInitiate,
 } from "../controllers/fileController.js";
 
 const router = express.Router();
 
-
-
 router.param("parentDirId", validateIdMiddleware);
 router.param("id", validateIdMiddleware);
 
-router.post("/upload/initiate" , HandleFileInit);
-router.post("/upload/complete" , upload_Complete);
-
-router.post("/:parentDirId?", uploadFile);
+router.post("/upload/initiate", uploadInitiate);
+router.post("/upload/complete", uploadComplete);
 
 router.get("/:id", getFile);
 

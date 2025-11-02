@@ -3,27 +3,18 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import directoryRoutes from "./routes/directoryRoutes.js";
 import fileRoutes from "./routes/fileRoutes.js";
+import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import webhookRoutes from "./routes/webhookRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import checkAuth from "./middlewares/authMiddleware.js";
 import { connectDB } from "./config/db.js";
-import subscriptionRoute from "./routes/subscriptionRoute.js";
-import webHook from "./routes/webHook.js";
-// import { createUserIdIndex } from "./config/createRedisIndex.js";
-
 
 await connectDB();
-
-// (async () => {
-//   await createUserIdIndex();
-// })();
 
 const PORT = process.env.PORT || 4000;
 
 const app = express();
-//for webhook with row data 
-app.use("/webhook" , express.raw({ type: "application/json" }), webHook);
-
 app.use(cookieParser(process.env.SESSION_SECRET));
 app.use(express.json());
 app.use(
@@ -33,16 +24,21 @@ app.use(
   })
 );
 
-app.get("/", (req , res) =>{
-  res.status(200).json({message : "Server is running"})
-})
+app.get("/", (req, res) => {
+  res.json({ message: "Hello from StorageApp!" });
+});
+
+app.get("/err", (req, res) => {
+  console.log("process exited with error");
+  process.exit(1);
+});
 
 app.use("/directory", checkAuth, directoryRoutes);
 app.use("/file", checkAuth, fileRoutes);
+app.use("/subscriptions", checkAuth, subscriptionRoutes);
+app.use("/webhooks", webhookRoutes);
 app.use("/", userRoutes);
 app.use("/auth", authRoutes);
-app.use("/subscription" , subscriptionRoute);
-
 
 app.use((err, req, res, next) => {
   console.log(err);
@@ -53,5 +49,3 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server Started`);
 });
-
-

@@ -1,82 +1,81 @@
-import { DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { getSignedUrl as getCloudFrontSignedUrl } from "@aws-sdk/cloudfront-signer";
 
-const s3Client = new S3Client({
-  profile : "nodejs",
-  region: "us-east-1",
-});
+// const s3Client = new S3Client({
+//   credentials: {
+//     accessKeyId: "AKIAWMFUPOZ3I2EEYSWN",
+//     secretAccessKey: process.env.AWS_SECRET_KEY,
+//   },
+// });
 
-export const creteUploadSignedUrl = async ({ Key, ContentType }) => { 
+const s3Client = new S3Client({profile: "nodejs" , region: "us-east-1"});
+
+export const createUploadSignedUrl = async ({ key, contentType }) => {
   const command = new PutObjectCommand({
     Bucket: "private-storageapp",
-    Key,
-    ContentType,
+    Key: key,
+    ContentType: contentType,
   });
 
-  const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
-  return signedUrl;
+  const url = await getSignedUrl(s3Client, command, {
+    expiresIn: 300,
+    signableHeaders: new Set(["content-type"]),
+  });
+
+  return url;
 };
 
-export const clound_Front_Get_Url = async ({key , download = false , fileName })=> {
+export const createGetSignedUrl = async ({
+  key,
+  download = false,
+  filename,
+}) => {
   const command = new GetObjectCommand({
-    Bucket : "private-storageapp",
-    Key : key,
-    ResponseContentDisposition : `${download ? "attachment" : "inline"}; filename="${fileName}"`
+    Bucket: "private-storageapp",
+    Key: key,
+    ResponseContentDisposition: `${download ? "attachment" : "inline"}; filename=${encodeURIComponent(filename)}`,
   });
 
- const url =  await  getSignedUrl(s3Client, command, { expiresIn: 300 });
-  console.log(url);
-  return url ; 
-} 
+  const url = await getSignedUrl(s3Client, command, {
+    expiresIn: 300,
+  });
 
+  return url;
+};
 
-
-export const get_S3_File_Meta_Data  = async ({Key})=> {
+export const getS3FileMetaData = async (key) => {
   const command = new HeadObjectCommand({
-    Bucket : "private-storageapp",
-    Key
+    Bucket: "private-storageapp",
+    Key: key,
   });
-  return await s3Client.send(command).then((data) => {
-    return data; 
-  })
-  
-}
 
-export const deleteS3File = async ({Key})=> {
+  return await s3Client.send(command);
+};
+
+export const deleteS3File = async (key) => {
   const command = new DeleteObjectCommand({
-  Bucket : "private-storageapp",
-  Key
+    Bucket: "private-storageapp",
+    Key: key,
   });
 
- try {
-   const response = await s3Client.send(command);
-  return response;
- } catch (error) {
-   console.log(error.message);
-   return error.message
- }
-}
+  return await s3Client.send(command);
+};
 
-export const deleteS3Files = async (Keys) => {
-  if (!Array.isArray(Keys) || Keys.length === 0) {
-    console.warn("No keys to delete.");
-    return;
-  }
-
+export const deleteS3Files = async (keys) => {
   const command = new DeleteObjectsCommand({
     Bucket: "private-storageapp",
     Delete: {
-      Objects: Keys.map((key) => ({ Key: key })),
-      Quiet: true,
+      Objects: keys,
+      Quiet: false, // set true to skip individual delete responses
     },
   });
 
-  try {
-    const response = await s3Client.send(command);
-    return response;
-  } catch (error) {
-    console.error("❌ S3 delete error:", error);
-    throw error;
-  }
+  return await s3Client.send(command);
 };
