@@ -5,7 +5,7 @@ import { CreateSubscription } from "./src/api/Subscription";
 const PLAN_CATALOG = {
   monthly: [
     {
-      id: "plan_RTFCU02Ktbi1Fi",
+      id: "plan_RaqrMweXFtMBIJ", 
       name: "Starter",
       tagline: "Great for individuals",
       storage: "2 TB",
@@ -15,36 +15,44 @@ const PLAN_CATALOG = {
       features: [
         "Secure cloud storage",
         "Link & folder sharing",
-        "Basic support",
+        "Basic support"
       ],
-      popular: false,
+      popular: false
     },
     {
-      id: "plan_RSGQzIncll0pyD",
+      id: "plan_Raqsgp8AWUioll",
       name: "Pro",
       tagline: "For creators & devs",
       storage: "5 TB",
       price: 399,
       period: "/mo",
       cta: "Choose 5 TB",
-      features: ["Everything in Starter", "Priority uploads", "Email support"],
-      popular: true,
+      features: [
+        "Everything in Starter",
+        "Priority uploads",
+        "Email support"
+      ],
+      popular: true
     },
     {
-      id: "plan_RSGRwZz8Etth4Z",
+      id: "plan_RaqtQwrVBlWENX", // Ultimate Plan – Monthly (10TB)
       name: "Ultimate",
       tagline: "Teams & power users",
       storage: "10 TB",
       price: 699,
       period: "/mo",
       cta: "Choose 10 TB",
-      features: ["Everything in Pro", "Version history", "Priority support"],
-      popular: false,
-    },
+      features: [
+        "Everything in Pro",
+        "Version history",
+        "Priority support"
+      ],
+      popular: false
+    }
   ],
   yearly: [
     {
-      id: "plan_RSGQ0zJcEnFyrb",
+      id: "plan_RaqvMy4nCCoGFp", // Starter Plan – Yearly (2TB)
       name: "Starter",
       tagline: "Great for individuals",
       storage: "2 TB",
@@ -54,34 +62,43 @@ const PLAN_CATALOG = {
       features: [
         "Secure cloud storage",
         "Link & folder sharing",
-        "Basic support",
+        "Basic support"
       ],
-      popular: false,
+      popular: false
     },
     {
-      id: "plan_RSGRCz4Dk1OHII",
+      id: "plan_RaqwGDQrTjugDr", // Pro Plan – Yearly (5TB)
       name: "Pro",
       tagline: "For creators & devs",
       storage: "5 TB",
       price: 3999,
       period: "/yr",
       cta: "Choose 5 TB",
-      features: ["Everything in Starter", "Priority uploads", "Email support"],
-      popular: true,
+      features: [
+        "Everything in Starter",
+        "Priority uploads",
+        "Email support"
+      ],
+      popular: true
     },
     {
-      id: "plan_RSGTXYCMqGK3Dd",
+      id: "plan_RaqxLEwWwBPD6w", // Ultimate Plan – Yearly (10TB)
       name: "Ultimate",
       tagline: "Teams & power users",
       storage: "10 TB",
       price: 6999,
       period: "/yr",
       cta: "Choose 10 TB",
-      features: ["Everything in Pro", "Version history", "Priority support"],
-      popular: false,
-    },
-  ],
+      features: [
+        "Everything in Pro",
+        "Version history",
+        "Priority support"
+      ],
+      popular: false
+    }
+  ]
 };
+
 
 function classNames(...cls) {
   return cls.filter(Boolean).join(" ");
@@ -173,13 +190,13 @@ export default function Plans() {
 async function handleSelect(plan) {
   try {
     const res = await CreateSubscription(plan.id);
-    console.log("Backend response:", res);
 
-    if (!res.subscriptionId) {
+    if (! res.subscriptionId) {
       alert("Failed to create subscription");
       return;
     }
-    openRazorpayPopup(res.subscriptionId);
+    // console.log(res);
+    openRazorpayPopup(res.subscriptionId , res.userId);
 
   } catch (err) {
     console.error("Error:", err);
@@ -248,15 +265,19 @@ async function handleSelect(plan) {
 
 
 
-function openRazorpayPopup(subscriptionId) {
+function openRazorpayPopup(subscriptionId , userId ) {
+
   const options = {
     key: "rzp_test_RTFBYFE9yirDdi", 
     subscription_id: subscriptionId, 
     name: "StorageApp",
-    description: "Monthly Cloud Storage Subscription",
-    image: "https://yourapp.com/logo.png", // optional
+    description: "",
+    image: "https://yourapp.com/logo.png", 
     theme: {
       color: "#3399cc",
+    },
+    notes: {
+      userId : userId ,
     },
     handler: function (response) {
       console.log("Payment success:", response);
