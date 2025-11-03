@@ -2,8 +2,7 @@ import path from "path";
 import Directory from "../models/directoryModel.js";
 import File from "../models/fileModel.js";
 import User from "../models/userModel.js";
-import {
-  createUploadSignedUrl,
+import { 
   deleteS3File,
   getS3FileMetaData,
 } from "../services/s3.js";
@@ -24,7 +23,7 @@ export const getFile = async (req, res) => {
     _id: id,
     userId: req.user._id,
   }).lean();
-  // Check if file exists
+
   if (!fileData) {
     return res.status(404).json({ error: "File not found!" });
   }
@@ -54,7 +53,7 @@ export const renameFile = async (req, res, next) => {
     userId: req.user._id,
   });
 
-  // Check if file exists
+
   if (!file) {
     return res.status(404).json({ error: "File not found!" });
   }
@@ -99,7 +98,6 @@ export const uploadInitiate = async (req, res) => {
       userId: req.user._id,
     });
 
-    // Check if parent directory exists
     if (!parentDirData) {
       return res.status(404).json({ error: "Parent directory not found!" });
     }
