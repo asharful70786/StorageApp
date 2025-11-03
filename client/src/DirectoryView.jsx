@@ -71,21 +71,21 @@ function DirectoryView() {
     const ext = filename.split(".").pop().toLowerCase();
     switch (ext) {
       case "pdf":
-        return "pdf";
+        return "📄";
       case "png":
       case "jpg":
       case "jpeg":
       case "gif":
-        return "image";
+        return "🖼️";
       case "mp4":
       case "mov":
       case "avi":
-        return "video";
+        return "🎬";
       case "zip":
       case "rar":
       case "tar":
       case "gz":
-        return "archive";
+        return "📦";
       case "js":
       case "jsx":
       case "ts":
@@ -94,9 +94,9 @@ function DirectoryView() {
       case "css":
       case "py":
       case "java":
-        return "code";
+        return "💻";
       default:
-        return "alt";
+        return "📎";
     }
   }
 
@@ -258,93 +258,120 @@ function DirectoryView() {
     : {};
 
   return (
-    <DirectoryContext.Provider
-      value={{
-        handleRowClick,
-        activeContextMenu,
-        handleContextMenu: (e, id) => {
-          e.stopPropagation();
-          e.preventDefault();
-          setActiveContextMenu((prev) => (prev === id ? null : id));
-        },
-        getFileIcon,
-        isUploading,
-        progressMap,
-        handleCancelUpload,
-        setDeleteItem,
-        openRenameModal,
-        openDetailsPopup,
-      }}
-    >
-      <div className="mx-2 md:mx-4">
-        {errorMessage &&
-          errorMessage !==
-            "Directory not found or you do not have access to it!" && (
-            <div className="error-message text-red-500 text-xs text-center mt-1">
-              {errorMessage}
-            </div>
-          )}
+    <div className="min-h-screen bg-white">
+      {/* Status Bar (iPhone-style) */}
+      <div className="bg-white pt-8 px-4 pb-2 border-b border-gray-100">
+       
+        
+        <DirectoryContext.Provider
+          value={{
+            handleRowClick,
+            activeContextMenu,
+            handleContextMenu: (e, id) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setActiveContextMenu((prev) => (prev === id ? null : id));
+            },
+            getFileIcon,
+            isUploading,
+            progressMap,
+            handleCancelUpload,
+            setDeleteItem,
+            openRenameModal,
+            openDetailsPopup,
+          }}
+        >
+          <div className="mx-2 md:mx-4">
+            {errorMessage &&
+              errorMessage !==
+                "Directory not found or you do not have access to it!" && (
+                <div className="error-message bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm text-center mb-4 shadow-sm">
+                  {errorMessage}
+                </div>
+              )}
 
-        <DirectoryHeader
-          directoryName={directoryName}
-          onCreateFolderClick={() => setShowCreateDirModal(true)}
-          onUploadFilesClick={() => fileInputRef.current.click()}
-          fileInputRef={fileInputRef}
-          handleFileSelect={handleFileSelect}
-          disabled={
-            errorMessage ===
-            "Directory not found or you do not have access to it!"
-          }
-        />
+            <DirectoryHeader
+              directoryName={directoryName}
+              onCreateFolderClick={() => setShowCreateDirModal(true)}
+              onUploadFilesClick={() => fileInputRef.current.click()}
+              fileInputRef={fileInputRef}
+              handleFileSelect={handleFileSelect}
+              disabled={
+                errorMessage ===
+                "Directory not found or you do not have access to it!"
+              }
+            />
 
-        {showCreateDirModal && (
-          <CreateDirectoryModal
-            newDirname={newDirname}
-            setNewDirname={setNewDirname}
-            onClose={() => setShowCreateDirModal(false)}
-            onCreateDirectory={handleCreateDirectory}
-          />
-        )}
+            {showCreateDirModal && (
+              <CreateDirectoryModal
+                newDirname={newDirname}
+                setNewDirname={setNewDirname}
+                onClose={() => setShowCreateDirModal(false)}
+                onCreateDirectory={handleCreateDirectory}
+              />
+            )}
 
-        {showRenameModal && (
-          <RenameModal
-            renameType={renameType}
-            renameValue={renameValue}
-            setRenameValue={setRenameValue}
-            onClose={() => setShowRenameModal(false)}
-            onRenameSubmit={handleRenameSubmit}
-          />
-        )}
+            {showRenameModal && (
+              <RenameModal
+                renameType={renameType}
+                renameValue={renameValue}
+                setRenameValue={setRenameValue}
+                onClose={() => setShowRenameModal(false)}
+                onRenameSubmit={handleRenameSubmit}
+              />
+            )}
 
-        {detailsItem && (
-          <DetailsPopup item={detailsItem} onClose={closeDetailsPopup} />
-        )}
+            {detailsItem && (
+              <DetailsPopup item={detailsItem} onClose={closeDetailsPopup} />
+            )}
 
-        {combinedItems.length === 0 ? (
-          errorMessage ===
-          "Directory not found or you do not have access to it!" ? (
-            <p className="text-center text-gray-600 mt-4 italic">
-              Directory not found or you do not have access to it!
-            </p>
-          ) : (
-            <p className="text-center text-gray-600 mt-4 italic">
-              This folder is empty. Upload a file or create a folder to see some
-              data.
-            </p>
-          )
-        ) : (
-          <DirectoryList items={combinedItems} />
-        )}
+            {/* Storage Summary */}
+            
 
-        {deleteItem && (
-          <ConfirmDeleteModal
-            item={deleteItem}
-            onConfirm={confirmDelete}
-            onCancel={() => setDeleteItem(null)}
-          />
-        )}
+            {combinedItems.length === 0 ? (
+              errorMessage ===
+              "Directory not found or you do not have access to it!" ? (
+                <div className="text-center py-16">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl">🚫</span>
+                  </div>
+                  <p className="text-gray-600 font-medium">Directory not found</p>
+                  <p className="text-gray-400 text-sm mt-1">You don't have access to this folder</p>
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-100">
+                    <span className="text-3xl">📁</span>
+                  </div>
+                  <p className="text-gray-600 font-medium">This folder is empty</p>
+                  <p className="text-gray-400 text-sm mt-1">Upload files or create folders to get started</p>
+                </div>
+              )
+            ) : (
+              <DirectoryList items={combinedItems} />
+            )}
+
+            {deleteItem && (
+              <ConfirmDeleteModal
+                item={deleteItem}
+                onConfirm={confirmDelete}
+                onCancel={() => setDeleteItem(null)}
+              />
+            )}
+          </div>
+        </DirectoryContext.Provider>
       </div>
-    </DirectoryContext.Provider>
+
+   
+
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+    </div>
   );
 }
 

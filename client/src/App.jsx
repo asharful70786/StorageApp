@@ -6,6 +6,10 @@ import Login from "./Login";
 import UsersPage from "./UsersPage";
 import Plans from "./Plans";
 import Subscription from "./Subscription";
+import NavBar from "./components/Layout/NavBar";
+import Footer from "./components/Layout/Footer";
+
+
 
 const router = createBrowserRouter([
   {
@@ -39,7 +43,13 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  return <RouterProvider router={router} />;
+  return <>
+  <NavBar />
+
+   <RouterProvider router={router} />
+   <Footer/>
+  
+  </>;
 }
 
 export default App;

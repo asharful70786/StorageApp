@@ -7,6 +7,9 @@ import {
   FaUser,
   FaSignOutAlt,
   FaSignInAlt,
+  FaCog,
+  FaCloud,
+  FaCrown
 } from "react-icons/fa";
 
 function DirectoryHeader({
@@ -26,6 +29,7 @@ function DirectoryHeader({
   const [usedStorageInBytes, setUsedStorageInBytes] = useState(0);
   const usedGB = usedStorageInBytes / 1024 ** 3;
   const totalGB = maxStorageInBytes / 1024 ** 3;
+  const storagePercentage = (usedGB / totalGB) * 100;
 
   const userMenuRef = useRef(null);
   const navigate = useNavigate();
@@ -90,104 +94,230 @@ function DirectoryHeader({
     return () => document.removeEventListener("mousedown", handleDocumentClick);
   }, []);
 
+  const getStorageColor = () => {
+    if (storagePercentage > 90) return "bg-red-500";
+    if (storagePercentage > 75) return "bg-yellow-500";
+    return "bg-gradient-to-r from-blue-500 to-purple-600";
+  };
+
   return (
-    <header className="flex items-center justify-between border-b border-gray-300 py-2 mb-4">
-      <h1 className="text-xl font-semibold">{directoryName}</h1>
-      <div className="flex gap-4 items-end">
-        <button
-          className="text-blue-500 hover:text-blue-700 text-xl -mb-0.5 mr-0.5 disabled:text-blue-300 disabled:cursor-not-allowed"
-          title="Create Folder"
-          onClick={onCreateFolderClick}
-          disabled={disabled}
-        >
-          <FaFolderPlus />
-        </button>
-        <button
-          className="text-blue-500 hover:text-blue-700 text-xl disabled:text-blue-300 disabled:cursor-not-allowed"
-          title="Upload Files"
-          onClick={onUploadFilesClick}
-          disabled={disabled}
-        >
-          <FaUpload />
-        </button>
-        <input
-          ref={fileInputRef}
-          id="file-upload"
-          type="file"
-          className="hidden"
-          onChange={handleFileSelect}
-        />
-        <div className="relative flex" ref={userMenuRef}>
+    <div className="bg-white px-6 py-4 border-b border-gray-100">
+      {/* Main Header Row */}
+      <div className="flex items-center justify-between">
+        {/* Breadcrumb and Title */}
+        <div className="flex items-center space-x-4">
           <button
-            className="text-blue-500 hover:text-blue-700 text-xl"
-            title="User Menu"
-            onClick={handleUserIconClick}
+            onClick={() => navigate(-1)}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
           >
-            {userPicture ? (
-              <img
-                className="w-8 h-8 rounded-full object-cover"
-                src={userPicture}
-                alt={userName}
-              />
-            ) : (
-              <FaUser />
-            )}
+            <span className="text-lg">←</span>
           </button>
-          {showUserMenu && (
-            <div className="absolute right-0 top-4 mt-2 w-48 bg-white rounded-md shadow-md z-10 border border-gray-300 overflow-hidden">
-              {loggedIn ? (
-                <>
-                  <div className="px-3 py-2 text-sm text-gray-800">
-                    <div className="font-semibold">{userName}</div>
-                    <div className="text-xs text-gray-500">{userEmail}</div>
-                    <div className="flex flex-col text-xs mr-2 mt-2">
-                      <div className="w-40 h-1 bg-gray-300 rounded-full overflow-hidden mb-1">
-                        <div
-                          className="bg-blue-500 rounded-full h-full"
-                          style={{ width: `${(usedGB / totalGB) * 100}%` }}
-                        ></div>
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">
+              {directoryName}
+            </h1>
+            <div className="flex items-center text-sm text-gray-500 mt-1">
+              <span>All files</span>
+              <span className="mx-2">•</span>
+              <span>{usedGB.toFixed(1)} GB used</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center space-x-3">
+          {/* Create Folder Button */}
+          <button
+            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl border transition-all ${
+              disabled 
+                ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed" 
+                : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 active:scale-95"
+            }`}
+            onClick={onCreateFolderClick}
+            disabled={disabled}
+          >
+            <FaFolderPlus className="text-lg" />
+            <span className="font-medium">New Folder</span>
+          </button>
+
+          {/* Upload Button */}
+          <button
+            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl border transition-all ${
+              disabled
+                ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-blue-500 to-purple-600 border-transparent text-white hover:shadow-lg active:scale-95"
+            }`}
+            onClick={onUploadFilesClick}
+            disabled={disabled}
+          >
+            <FaUpload className="text-lg" />
+            <span className="font-medium">Upload</span>
+          </button>
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            id="file-upload"
+            type="file"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+
+          {/* User Menu */}
+          <div className="relative" ref={userMenuRef}>
+            <button
+              onClick={handleUserIconClick}
+              className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all ${
+                showUserMenu
+                  ? "bg-gray-100 border-gray-300"
+                  : "bg-white border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              {userPicture ? (
+                <img
+                  className="w-8 h-8 rounded-lg object-cover"
+                  src={userPicture}
+                  alt={userName}
+                />
+              ) : (
+                <FaUser className="text-gray-600 text-lg" />
+              )}
+            </button>
+
+            {/* User Dropdown Menu */}
+            {showUserMenu && (
+              <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-xl border border-gray-200 z-50 overflow-hidden animate-fadeIn">
+                {loggedIn ? (
+                  <>
+                    {/* User Info Section */}
+                    <div className="p-6 border-b border-gray-100">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                          {userPicture ? (
+                            <img
+                              className="w-10 h-10 rounded-lg object-cover"
+                              src={userPicture}
+                              alt={userName}
+                            />
+                          ) : (
+                            <FaUser className="text-white text-xl" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate">
+                            {userName}
+                          </h3>
+                          <p className="text-sm text-gray-500 truncate">
+                            {userEmail}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-xs">
-                        {usedGB.toFixed(2)} GB of {totalGB} GB used
+
+                      {/* Storage Progress */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Storage</span>
+                          <span className="font-medium text-gray-900">
+                            {usedGB.toFixed(1)} GB of {totalGB} GB
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all ${getStorageColor()}`}
+                            style={{ width: `${storagePercentage}%` }}
+                          ></div>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Menu Items */}
+                    <div className="p-2">
+                      <Link
+                        to="/plans"
+                        className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                      >
+                        <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
+                          <FaCrown className="text-white text-sm" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">Upgrade Storage</div>
+                          <div className="text-sm text-gray-500">Get more space and features</div>
+                        </div>
+                      </Link>
+
+                      <Link
+                        to="/subscription"
+                        className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors group"
+                      >
+                        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <FaCloud className="text-gray-600 text-sm" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">Manage Subscription</div>
+                          <div className="text-sm text-gray-500">Billing and plans</div>
+                        </div>
+                      </Link>
+
+                      <div className="border-t border-gray-100 my-2"></div>
+
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors group w-full text-left"
+                      >
+                        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <FaSignOutAlt className="text-gray-600 text-sm" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">Logout</div>
+                          <div className="text-sm text-gray-500">Sign out from this device</div>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={handleLogoutAll}
+                        className="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors group w-full text-left"
+                      >
+                        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <FaSignOutAlt className="text-gray-600 text-sm" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">Logout All Sessions</div>
+                          <div className="text-sm text-gray-500">Sign out from all devices</div>
+                        </div>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  /* Guest User View */
+                  <div className="p-6">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <FaUser className="text-gray-400 text-2xl" />
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Guest User</h3>
+                      <p className="text-sm text-gray-500 mb-4">
+                        Sign in to access your files across devices
+                      </p>
+                      <button
+                        onClick={() => {
+                          navigate("/login");
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-medium hover:shadow-lg transition-all active:scale-95"
+                      >
+                        Sign In
+                      </button>
+                    </div>
                   </div>
-                  <div className="border-t border-gray-200" />
-                  <Link to='/plans'
-                    className="flex items-center text-sm gap-2 text-blue-700 cursor-pointer hover:bg-gray-200 px-4 py-2"
-                  >
-                    Get More Storage
-                  </Link>
-                  <Link to="/subscription" className="flex items-center text-sm gap-2 text-blue-700 cursor-pointer hover:bg-gray-200 px-4 py-2">Manage  Subscription</Link>
-                  <div
-                    className="flex items-center gap-2 text-gray-700 cursor-pointer hover:bg-gray-200 px-4 py-2"
-                    onClick={handleLogout}
-                  >
-                    <FaSignOutAlt className="text-blue-600" /> Logout
-                  </div>
-                  <div
-                    className="flex items-center gap-2 text-gray-700 cursor-pointer hover:bg-gray-200 px-4 py-2"
-                    onClick={handleLogoutAll}
-                  >
-                    <FaSignOutAlt className="text-blue-600" /> Logout All
-                  </div>
-                </>
-              ) : (
-                <div
-                  className="flex items-center gap-2 text-gray-700 cursor-pointer hover:bg-gray-200 px-4 py-2"
-                  onClick={() => {
-                    navigate("/login");
-                    setShowUserMenu(false);
-                  }}
-                >
-                  <FaSignInAlt className="text-blue-600" /> Login
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </header>
+
+ 
+    </div>
   );
 }
 
