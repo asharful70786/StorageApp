@@ -158,6 +158,7 @@ function DirectoryHeader({
                   >
                     Get More Storage
                   </Link>
+                  <Link to="/subscription" className="flex items-center text-sm gap-2 text-blue-700 cursor-pointer hover:bg-gray-200 px-4 py-2">Manage  Subscription</Link>
                   <div
                     className="flex items-center gap-2 text-gray-700 cursor-pointer hover:bg-gray-200 px-4 py-2"
                     onClick={handleLogout}
