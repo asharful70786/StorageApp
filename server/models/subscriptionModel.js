@@ -5,6 +5,7 @@ const subscriptionSchema = new Schema(
     razorpaySubscriptionId: {
       type: String,
       required: true,
+      unique: true, // ✅ prevents duplicate Razorpay subscriptions per user
     },
     userId: {
       type: Schema.Types.ObjectId,
@@ -25,11 +26,9 @@ const subscriptionSchema = new Schema(
       default: "created",
     },
   },
-  {
-    strict: "throw",
-    timestamps: true,
-  }
+  { timestamps: true }
 );
+
 
 const Subscription = model("Subscription", subscriptionSchema);
 
