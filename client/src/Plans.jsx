@@ -263,9 +263,9 @@ function openRazorpayPopup({ subscriptionId, user, course, onClose }) {
     // key: "rzp_live_RQtKefrYAszEWo",
     key: "rzp_test_RTFBYFE9yirDdi",
     description: "My first test payment.",
-    name: "ProCodrr Labs",
+    name: "Storage App Subscription",
     subscription_id: subscriptionId,
-    image: "http://localhost:5173/procodrr.png",
+    image: "./stoargeApp_logo.webp",
     notes: {
       // courseId: course.id,
       // courseName: course.name,
