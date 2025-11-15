@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import {
   DeleteObjectCommand,
   DeleteObjectsCommand,
@@ -16,7 +19,7 @@ const s3Client = new S3Client({
   },
 });
 
-// const s3Client = new S3Client({profile: "nodejs" ,});
+
 
 export const createUploadSignedUrl = async ({ key, contentType }) => {
   const command = new PutObjectCommand({
@@ -27,8 +30,9 @@ export const createUploadSignedUrl = async ({ key, contentType }) => {
 
   const url = await getSignedUrl(s3Client, command, {
     expiresIn: 300,
-    signableHeaders: new Set(["content-type"]),
+    // signableHeaders: new Set(["content-type"]),
   });
+  console.log(url)
 
   return url;
 };
