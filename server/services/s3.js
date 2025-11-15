@@ -8,14 +8,15 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-// const s3Client = new S3Client({
-//   credentials: {
-//     accessKeyId: "AKIAWMFUPOZ3I2EEYSWN",
-//     secretAccessKey: process.env.AWS_SECRET_KEY,
-//   },
-// });
+const s3Client = new S3Client({
+  region: "us-east-1",
+  credentials: {
+    accessKeyId:  process.env.aws_access_key_id,
+    secretAccessKey: process.env.aws_secret_access_key,
+  },
+});
 
-const s3Client = new S3Client({profile: "nodejs" , region: "us-east-1"});
+// const s3Client = new S3Client({profile: "nodejs" ,});
 
 export const createUploadSignedUrl = async ({ key, contentType }) => {
   const command = new PutObjectCommand({
