@@ -1,5 +1,13 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import Razorpay from "razorpay";
 import Subscription from "../models/subscriptionModel.js";
+
+
+
+
+console.log(process.env.RAZORPAY_KEY_ID , process.env.RAZORPAY_KEY_SECRET)
 
 const rzpInstance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
