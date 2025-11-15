@@ -46,6 +46,13 @@ app.use((err, req, res, next) => {
   res.json(err);
 });
 
+app.get("/err" , (req , res)=> {
+console.log('error occered');
+process.exit(1);
+});
+
+
+
 app.listen(PORT, () => {
   console.log(`Server Started`);
 });
