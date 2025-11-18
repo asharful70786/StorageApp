@@ -92,7 +92,10 @@ export const deleteFile = async (req, res, next) => {
 };
 
 export const uploadInitiate = async (req, res) => {
+  console.log(`req.body: ${JSON.stringify(req.body)}`);
+
   const parentDirId = req.body.parentDirId || req.user.rootDirId;
+
   try {
     const parentDirData = await Directory.findOne({
       _id: parentDirId,
@@ -103,12 +106,16 @@ export const uploadInitiate = async (req, res) => {
       return res.status(404).json({ error: "Parent directory not found!" });
     }
 
-    const filename = req.body.name || "untitled";
-    const filesize = req.body.size;
+   
+    const filename = req.body.filename || req.body.name || "untitled";
+    const filesize = req.body.filesize || req.body.size;
+
+    if (!filesize) {
+      return res.status(400).json({ error: "Missing file size." });
+    }
 
     const user = await User.findById(req.user._id);
     const rootDir = await Directory.findById(req.user.rootDirId);
-
     const remainingSpace = user.maxStorageInBytes - rootDir.size;
 
     if (filesize > remainingSpace) {
@@ -117,7 +124,9 @@ export const uploadInitiate = async (req, res) => {
     }
 
     const extension = path.extname(filename);
-    const insertedFile = await File.insertOne({
+
+
+    const insertedFile = await File.create({
       extension,
       name: filename,
       size: filesize,
@@ -125,16 +134,23 @@ export const uploadInitiate = async (req, res) => {
       userId: req.user._id,
       isUploading: true,
     });
+
     const uploadSignedUrl = await createUploadSignedUrl({
-      key: `${insertedFile.id}${extension}`,
+      key: `${insertedFile._id}${extension}`,
       contentType: req.body.contentType,
     });
-   return  res.json({ uploadSignedUrl, fileId: insertedFile.id });
+
+    return res.json({
+      uploadSignedUrl,
+      fileId: insertedFile._id,
+    });
+
   } catch (err) {
-    return res.status(500).json({ error: err.message });
     console.log(err);
+    return res.status(500).json({ error: err.message });
   }
 };
+
 
 export const uploadComplete = async (req, res, next) => {
   const file = await File.findById(req.body.fileId);
