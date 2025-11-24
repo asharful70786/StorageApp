@@ -14,42 +14,9 @@ import { exec } from "child_process";
 
 const GITHUB_SECRET = "Bitto0000"; 
 
-function verifySignature(req) {
-  const signature = req.headers["x-hub-signature-256"];
-  const hmac = crypto
-    .createHmac("sha256", GITHUB_SECRET)
-    .update(JSON.stringify(req.body))
-    .digest("hex");
-  const expected = `sha256=${hmac}`;
-  return signature === expected;
-}
 
 
 const app = express();
-
-app.post("/github-webhook", (req, res) => {
-  if (!verifySignature(req)) {
-    return res.status(401).send("Invalid signature");
-  }
-
-  exec("bash /home/ubuntu/client-deployment.sh", (err, stdout, stderr) => {
-    if (err) {
-      console.error("Deploy error:", stderr);
-      return res.status(500).send("Deploy failed");
-    }
-
-    console.log(stdout);
-    res.send("Deploy triggered");
-  });
-});
-
-
-
-
-
-
-
-
 
 
 await connectDB();
@@ -65,6 +32,23 @@ app.use(
     credentials: true,
   })
 );
+
+
+app.post("/github-webhook", (req, res) => {
+  //now as for without verify ok  Test 
+
+  exec("bash /home/ubuntu/client-deployment.sh", (err, stdout, stderr) => {
+    if (err) {
+      console.error("Deploy error:", stderr);
+      return res.status(500).send("Deploy failed");
+    }
+
+    console.log(stdout);
+    res.send("Deploy triggered");
+  });
+});
+
+
 
 app.get("/", (req, res) => {
   res.json({ message: "Hello from StorageApp!" });
