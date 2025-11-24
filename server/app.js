@@ -24,6 +24,9 @@ function verifySignature(req) {
   return signature === expected;
 }
 
+
+const app = express();
+
 app.post("/github-webhook", (req, res) => {
   if (!verifySignature(req)) {
     return res.status(401).send("Invalid signature");
@@ -53,7 +56,7 @@ await connectDB();
 
 const PORT = process.env.PORT || 4000;
 
-const app = express();
+
 app.use(cookieParser(process.env.SESSION_SECRET));
 app.use(express.json());
 app.use(
