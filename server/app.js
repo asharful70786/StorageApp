@@ -35,18 +35,19 @@ app.use(
 
 
 app.post("/github-webhook", (req, res) => {
-  //now as for without verify ok  Test 
+  // Respond IMMEDIATELY (within milliseconds)
+  res.status(200).send("OK");
 
+  // Then run deployment in the background
   exec("bash /home/ubuntu/client-deployment.sh", (err, stdout, stderr) => {
     if (err) {
       console.error("Deploy error:", stderr);
-      return res.status(500).send("Deploy failed");
+      return;
     }
-
     console.log(stdout);
-    res.send("Deploy triggered");
   });
 });
+
 
 
 
