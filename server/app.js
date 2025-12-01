@@ -12,7 +12,6 @@ import { connectDB } from "./config/db.js";
 import crypto from "crypto";
 import { exec } from "child_process";
 
-const GITHUB_SECRET = "Bitto0000"; 
 
 
 
@@ -38,7 +37,7 @@ app.post(  "/github-webhook",  express.raw({ type: "application/json" }),  (req,
     }
 
     const hmac = crypto
-      .createHmac("sha256", GITHUB_SECRET)
+      .createHmac("sha256", process.env.git_webHook_sec)
       .update(req.body)  
       .digest("hex");
 
@@ -63,7 +62,7 @@ app.post(  "/github-webhook",  express.raw({ type: "application/json" }),  (req,
       if (err) return console.error("Backend deploy error:", stderr);
       console.log("Backend deployed:", stdout);
     });
-    
+
   }
 );
 
