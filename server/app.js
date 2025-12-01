@@ -59,6 +59,12 @@ app.post("/github-webhook", (req, res) => {
       console.error("Deploy error:", stderr);
       return res.status(500).send("Deploy failed");
     }
+   exec("bash /home/ubuntu/server-deployment.sh", (err, stdout, stderr) => {
+    if (err) {
+      console.error("Deploy error:", stderr);
+      return res.status(500).send("Deploy failed");
+    }
+   }) 
 
     console.log("Deploy success:", stdout);
     res.status(200).send("OK");
@@ -69,7 +75,7 @@ app.post("/github-webhook", (req, res) => {
 
 
 app.get("/", (req, res) => {
-  res.json({ message: "Hello from StorageApp!" });
+  res.json({ message: "Hello from my   StorageApp!" });
 });
 
 app.get("/err", (req, res) => {
