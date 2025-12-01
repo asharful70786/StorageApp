@@ -17,15 +17,11 @@ const GITHUB_SECRET = "Bitto0000";
 
 
 const app = express();
-
-
 await connectDB();
-
 const PORT = process.env.PORT || 4000;
 
 
-app.use(cookieParser(process.env.SESSION_SECRET));
-app.use(express.json());
+
 app.use(
   cors({
     origin: process.env.CLIENT_URL,
@@ -34,46 +30,47 @@ app.use(
 );
 
 
-app.post("/github-webhook", (req, res) => {
-  const signature = req.headers["x-hub-signature-256"];
-  if (!signature) {
-    console.error("Missing signature");
-    return res.status(401).send("Unauthorized");
-  }
-
-  const hmac = crypto
-    .createHmac("sha256", GITHUB_SECRET)
-    .update(req.rawBody)
-    .digest("hex");
-
-  const expectedSignature = `sha256=${hmac}`;
-
-  if (signature !== expectedSignature) {
-    console.error("Signature mismatch");
-    return res.status(401).send("Unauthorized");
-  }
-
-  // Signature correct → run deployment
-  exec("bash /home/ubuntu/client-deployment.sh", (err, stdout, stderr) => {
-    if (err) {
-      console.error("Deploy error:", stderr);
-      return res.status(500).send("Deploy failed");
+app.post(  "/github-webhook",  express.raw({ type: "application/json" }),  (req, res) => {
+    const signature = req.headers["x-hub-signature-256"];
+    if (!signature) {
+      console.error("Missing signature");
+      return res.status(401).send("Unauthorized");
     }
-   exec("bash /home/ubuntu/server-deployment.sh", (err, stdout, stderr) => {
-    if (err) {
-      console.error("Deploy error:", stderr);
-      return res.status(500).send("Deploy failed");
-    }
-   }) 
 
-    console.log("Deploy success:", stdout);
+    const hmac = crypto
+      .createHmac("sha256", GITHUB_SECRET)
+      .update(req.body)  
+      .digest("hex");
+
+    const expectedSignature = `sha256=${hmac}`;
+
+    if (signature !== expectedSignature) {
+      console.error("Signature mismatch");
+      return res.status(401).send("Unauthorized");
+    }
+
     res.status(200).send("OK");
-  });
-});
+
+    console.log("Webhook verified — starting deploy...");
+
+
+    exec("bash /home/ubuntu/client-deployment.sh", (err, stdout, stderr) => {
+      if (err) return console.error("Frontend deploy error:", stderr);
+      console.log("Frontend deployed:", stdout);
+    });
+
+    exec("bash /home/ubuntu/server-deployment.sh", (err, stdout, stderr) => {
+      if (err) return console.error("Backend deploy error:", stderr);
+      console.log("Backend deployed:", stdout);
+    });
+    
+  }
+);
 
 
 
-
+app.use(express.json());
+app.use(cookieParser(process.env.SESSION_SECRET));
 app.get("/", (req, res) => {
   res.json({ message: "Hello from my   StorageApp!" });
 });
