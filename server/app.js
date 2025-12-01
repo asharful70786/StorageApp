@@ -35,16 +35,33 @@ app.use(
 
 
 app.post("/github-webhook", (req, res) => {
-  // Respond IMMEDIATELY (within milliseconds)
-  res.status(200).send("OK");
+  const signature = req.headers["x-hub-signature-256"];
+  if (!signature) {
+    console.error("Missing signature");
+    return res.status(401).send("Unauthorized");
+  }
 
-  // Then run deployment in the background
+  const hmac = crypto
+    .createHmac("sha256", GITHUB_SECRET)
+    .update(req.rawBody)
+    .digest("hex");
+
+  const expectedSignature = `sha256=${hmac}`;
+
+  if (signature !== expectedSignature) {
+    console.error("Signature mismatch");
+    return res.status(401).send("Unauthorized");
+  }
+
+  // Signature correct → run deployment
   exec("bash /home/ubuntu/client-deployment.sh", (err, stdout, stderr) => {
     if (err) {
       console.error("Deploy error:", stderr);
-      return;
+      return res.status(500).send("Deploy failed");
     }
-    console.log(stdout);
+
+    console.log("Deploy success:", stdout);
+    res.status(200).send("OK");
   });
 });
 
