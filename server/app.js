@@ -18,23 +18,23 @@ const PORT = process.env.PORT || 4000;
 
 
 app.post("/github-webhook",  express.raw({ type: "application/json" }),  (req, res) => {
-    const signature = req.headers["x-hub-signature-256"];
-    if (!signature) {
-      console.error("Missing signature");
-      return res.status(401).send("Unauthorized");
-    }
+    // const signature = req.headers["x-hub-signature-256"];
+    // if (!signature) {
+    //   console.error("Missing signature");
+    //   return res.status(401).send("Unauthorized");
+    // }
 
-    const hmac = crypto
-      .createHmac("sha256", process.env.git_webHook_sec)
-      .update(req.body) 
-      .digest("hex");
+    // const hmac = crypto
+    //   .createHmac("sha256", process.env.git_webHook_sec)
+    //   .update(req.body) 
+    //   .digest("hex");
 
-    const expectedSignature = `sha256=${hmac}`;
+    // const expectedSignature = `sha256=${hmac}`;
 
-    if (signature !== expectedSignature) {
-      console.error("Signature mismatch");
-      return res.status(401).send("Unauthorized");
-    }
+    // if (signature !== expectedSignature) {
+    //   console.error("Signature mismatch");
+    //   return res.status(401).send("Unauthorized");
+    // }
 
     res.status(200).send("OK");
 
