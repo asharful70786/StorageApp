@@ -41,11 +41,6 @@ app.post("/github-webhook",  express.raw({ type: "application/json" }),  (req, r
 
     console.log("Webhook verified — starting deploy...");
 
-    exec("bash /home/ubuntu/client-deployment.sh", (err, stdout, stderr) => {
-      if (err) return console.error("Frontend deploy error:", stderr);
-      console.log("Frontend deployed:", stdout);
-    });
-
     exec("bash /home/ubuntu/server-deployment.sh", (err, stdout, stderr) => {
       if (err) return console.error("Backend deploy error:", stderr);
       console.log("Backend deployed:", stdout);
