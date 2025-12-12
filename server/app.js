@@ -1,3 +1,4 @@
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -63,7 +64,7 @@ app.use(express.json());
 app.use(cookieParser(process.env.SESSION_SECRET));
 
 app.get("/", (req, res) => {
-  res.json({ message: "Hello from my personal  StorageApp!" });
+  res.json({ message: "Hello from my personal Ashrfaul StorageApp!" });
 });
 
 app.get("/err", (req, res) => {
