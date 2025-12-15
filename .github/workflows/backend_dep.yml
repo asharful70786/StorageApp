@@ -36,7 +36,7 @@ jobs:
             npm ci --no-audit --no-fund
 
             echo "Reloading PM2 app..."
-            pm2 reload storageApp
+            pm2 reload StorageApp
 
             echo "Backend Deployed Successfully..."
           EOF

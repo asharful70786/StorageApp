@@ -59,7 +59,7 @@ app.use(express.json());
 app.use(cookieParser(process.env.SESSION_SECRET));
 
 app.get("/", (req, res) => {
-  res.json({ message: "Hello from my personal Ashrfaul StorageApp!" });
+  res.json({ message: "Hey man how are you ==> Ashraful" });
 });
 
 app.get("/err", (req, res) => {
